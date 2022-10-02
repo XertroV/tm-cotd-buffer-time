@@ -49,11 +49,6 @@ namespace KoBufferUI {
     int boldDisplayFont = nvg::LoadFont("fonts/MontserratMono-Bold.ttf", true, true);
     // int bufferDisplayFont = nvg::LoadFont("DroidSans.ttf", true, true);
 
-#if DEV
-    MLFeed::PlayerCpInfo@ testInfo;
-    int lastPlayerCp = 0;
-#endif
-
     void RenderMenu() {
         if (UI::MenuItem("\\$faa\\$s" + menuIcon + "\\$z COTD Buffer Time", MenuShortcutStr, g_koBufferUIVisible)) {
             g_koBufferUIVisible = !g_koBufferUIVisible;
@@ -71,10 +66,6 @@ namespace KoBufferUI {
     void Render() {
         if (!g_koBufferUIVisible) return;
         if (!KoBuffer::IsGameModeCotdKO) return;
-
-        // if (Time::Now % 47 == 0) {
-        //     trace('should be drawing...');
-        // }
 
         // calc player's position relative to ko position
         // target: either player right before or after ko pos
@@ -94,6 +85,7 @@ namespace KoBufferUI {
         MLFeed::PlayerCpInfo@ postCpInfo = null;
         MLFeed::PlayerCpInfo@ localPlayer = null;
         auto @sorted = theHook.SortedPlayers_Race;
+        // todo: if postCpInfo is null it might be because there aren't enough players, so count as 0 progress?
 
         for (uint i = 0; i < sorted.Length; i++) {
             // uint currRank = i + 1;
@@ -107,35 +99,7 @@ namespace KoBufferUI {
         bool isOut = (int(localPlayer.raceRank) > koFeedHook.PlayersNb - koFeedHook.KOsNumber)
                 && preCpInfo.cpCount == int(theHook.CPsToFinish);
 
-        // if (localPlayer !is null)
-        //     trace('local player not null');
-        // else
-        //     trace('local player is null');
-
         if (localPlayer is null) return;
-#if DEV
-        if (nPlayers == 1 && sorted.Length == 1 && (postCpInfo is null || preCpInfo is null)) {
-            if (testInfo is null || lastPlayerCp != localPlayer.cpCount) {
-                lastPlayerCp = localPlayer.cpCount;
-                int randAdjust = Math::Rand(-150, 150);
-                int offset = randAdjust > 75 ? -1 : 0;
-                @testInfo = MLFeed::PlayerCpInfo(localPlayer, offset);
-                testInfo.lastCpTime += randAdjust;
-                testInfo.raceRank += (randAdjust < 0) ? 0 : 2;
-                if (randAdjust >= -75)
-                    testInfo.cpTimes[testInfo.cpCount] += randAdjust;
-                else { // invent a cp ahead
-                    testInfo.lastCpTime -= randAdjust * 3;
-                    testInfo.cpTimes.InsertLast(testInfo.lastCpTime);
-                    testInfo.cpCount += 1;
-                }
-                warn('player: ' + localPlayer.ToString());
-                warn('adding postCpInfo: ' + testInfo.ToString());
-            }
-            @postCpInfo = testInfo;
-            @preCpInfo = testInfo;
-        }
-#endif
         if (localPlayer is null || preCpInfo is null || postCpInfo is null) {
 #if DEV
             trace('a cp time player was null!');

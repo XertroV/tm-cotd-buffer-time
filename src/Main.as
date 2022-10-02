@@ -1,8 +1,5 @@
 void Main() {
     startnew(KoBuffer::Main);
-#if DEV
-        // KoFeedUI::g_windowVisible = true;
-#endif
 }
 
 void OnDestroyed() { _Unload(); }

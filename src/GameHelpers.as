@@ -81,6 +81,14 @@ string get_GUIPlayerUserName() {
     return GUIPlayer.User.Name;
 }
 
+string get_AnyPlayerUserName() {
+    if (GUIPlayer is null) {
+        if (ControlledPlayer is null) return "";
+        return ControlledPlayer.User.Name;
+    }
+    return GUIPlayer.User.Name;
+}
+
 
 string _localUserLogin;
 string get_LocalUserLogin() {

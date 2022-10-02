@@ -37,6 +37,7 @@ namespace KoBuffer {
 }
 
 namespace KoBufferUI {
+
     [Setting hidden]
     bool g_koBufferUIVisible = true;
     // const string menuIcon = Icons::ArrowsH;
@@ -47,7 +48,7 @@ namespace KoBufferUI {
     // int bufferDisplayFont = nvg::LoadFont("DroidSans.ttf", true, true);
 
 #if DEV
-    PlayerCpInfo@ testInfo;
+    MLFeed::PlayerCpInfo@ testInfo;
     int lastPlayerCp = 0;
 #endif
 
@@ -68,40 +69,52 @@ namespace KoBufferUI {
     void Render() {
         if (!g_koBufferUIVisible) return;
         if (!KoBuffer::IsGameModeCotdKO) return;
+
+        // if (Time::Now % 47 == 0) {
+        //     trace('should be drawing...');
+        // }
+
         // calc player's position relative to ko position
         // target: either player right before or after ko pos
-        if (koFeedHook is null || theHook is null) return;
+        // if (koFeedHook is null || theHook is null) return;
+        auto theHook = MLFeed::GetRaceData();
+        auto koFeedHook = MLFeed::GetKoData();
         // string localUser = LocalUserName;
         string localUser = GUIPlayerUserName;
         uint localUserRank = 0;
-        uint nPlayers = koFeedHook.playersNb;
-        uint nKOs = koFeedHook.kosNumber;
+        uint nPlayers = koFeedHook.PlayersNb;
+        uint nKOs = koFeedHook.KOsNumber;
         uint preCutoffRank = nPlayers - nKOs;
         uint postCutoffRank = preCutoffRank + 1;
-        PlayerCpInfo@ preCpInfo = null;
-        PlayerCpInfo@ postCpInfo = null;
-        PlayerCpInfo@ localPlayer = null;
-        g_sortMethod = SortMethod::Race;
+        MLFeed::PlayerCpInfo@ preCpInfo = null;
+        MLFeed::PlayerCpInfo@ postCpInfo = null;
+        MLFeed::PlayerCpInfo@ localPlayer = null;
+        auto @sorted = theHook.SortedPlayers_Race;
 
-        for (uint i = 0; i < theHook.sortedPlayers.Length; i++) {
+        for (uint i = 0; i < sorted.Length; i++) {
             // uint currRank = i + 1;
-            auto player = theHook.sortedPlayers[i];
+            auto player = sorted[i];
             if (player is null) continue; // edge case on changing maps and things
             if (player.name == localUser) @localPlayer = player;
-            if (player.lastRank == preCutoffRank) @preCpInfo = player;
-            if (player.lastRank == postCutoffRank) @postCpInfo = player;
+            if (player.raceRank == preCutoffRank) @preCpInfo = player;
+            if (player.raceRank == postCutoffRank) @postCpInfo = player;
         }
+
+        // if (localPlayer !is null)
+        //     trace('local player not null');
+        // else
+        //     trace('local player is null');
 
         if (localPlayer is null) return;
 #if DEV
-        if (nPlayers == 1 && theHook.sortedPlayers.Length == 1 && (postCpInfo is null || preCpInfo is null)) {
+        if (nPlayers == 1 && sorted.Length == 1 && (postCpInfo is null || preCpInfo is null)) {
             if (testInfo is null || lastPlayerCp != localPlayer.cpCount) {
                 lastPlayerCp = localPlayer.cpCount;
                 int randAdjust = Math::Rand(-150, 150);
                 int offset = randAdjust > 75 ? -1 : 0;
-                @testInfo = PlayerCpInfo(localPlayer, offset);
+                @testInfo = MLFeed::PlayerCpInfo(localPlayer, offset);
                 testInfo.lastCpTime += randAdjust;
-                testInfo.lastRank += (randAdjust < 0) ? 0 : 2;
+                testInfo.raceRank += (randAdjust < 0) ? 0 : 2;
                 if (randAdjust >= -75)
                     testInfo.cpTimes[testInfo.cpCount] += randAdjust;
                 else { // invent a cp ahead
@@ -126,15 +139,15 @@ namespace KoBufferUI {
             return;
         }
 
-        PlayerCpInfo@ targetCpInfo;
+        MLFeed::PlayerCpInfo@ targetCpInfo;
         int msDelta;
         bool isBehind;
         bool sameCp;
 
         // ahead of 1st player to be eliminated?
-        if (localPlayer.lastRank < postCpInfo.lastRank) @targetCpInfo = postCpInfo;
+        if (localPlayer.raceRank < postCpInfo.raceRank) @targetCpInfo = postCpInfo;
         else @targetCpInfo = preCpInfo; // otherwise, if at risk of elim
-        isBehind = localPlayer.lastRank > targetCpInfo.lastRank; // should never be ==
+        isBehind = localPlayer.raceRank > targetCpInfo.raceRank; // should never be ==
         // are we at same CP?
         sameCp = localPlayer.cpCount == targetCpInfo.cpCount;
 

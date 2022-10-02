@@ -143,13 +143,51 @@ namespace KoBufferUI {
         int msDelta;
         bool isBehind;
         bool sameCp;
+        bool newWay = true;
 
         // ahead of 1st player to be eliminated?
-        if (localPlayer.raceRank < postCpInfo.raceRank) @targetCpInfo = postCpInfo;
+        if (localPlayer.raceRank < postCutoffRank) @targetCpInfo = postCpInfo;
         else @targetCpInfo = preCpInfo; // otherwise, if at risk of elim
         isBehind = localPlayer.raceRank > targetCpInfo.raceRank; // should never be ==
         // are we at same CP?
         sameCp = localPlayer.cpCount == targetCpInfo.cpCount;
+
+        // old way
+        if (!newWay) {
+
+            if (sameCp)
+                msDelta = Math::Abs(localPlayer.lastCpTime - targetCpInfo.lastCpTime);
+            else { // otherwise, we're at least (GameTime - player[cp]) ahead/behind
+                uint cpToCompare = Math::Max(targetCpInfo.cpCount, localPlayer.cpCount);
+                // diff between
+                auto aheadPlayer = isBehind ? targetCpInfo : localPlayer;
+                auto behindPlayer = isBehind ? localPlayer : targetCpInfo;
+
+                if (isBehind)
+                    msDelta = CurrentRaceTime - targetCpInfo.cpTimes[cpToCompare];
+                else
+                    msDelta = CurrentRaceTime - localPlayer.cpTimes[cpToCompare];
+            }
+        }
+
+        // new way
+        if (newWay) {
+            auto aheadPlayer = isBehind ? targetCpInfo : localPlayer;
+            auto behindPlayer = isBehind ? localPlayer : targetCpInfo;
+            uint minBuffer = aheadPlayer.cpCount == 0 ? 0 : (CurrentRaceTime - aheadPlayer.lastCpTime);
+            msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount];
+            if (msDelta < 0) msDelta = minBuffer;
+            // we replace msDelta with min buffer in this sorta situation:
+            // - 3rd place will be eliminated
+            // - you were in 3rd
+            // - so buffer is negative and diff between cp times
+            // - but then you cross cp first before other guy
+            // - so you're the ahead player, however, the diff CP times for prior CP was negative
+            // - you haven't gained the -'ve amount in buffer, tho, b/c the other player might get CP in 0.001s or whatever.
+            // - so all you know is that you have no negative buffer
+            // - and you know how much +'ve buffer you have once the guy crosses the line, which happens X seconsd later
+            // - so at a minimum the buffer is CurrentRaceTime - ahead.lastCp
+        }
 
         // time Ahead is ahead of Behind is:
         // 1. relative_cp_diff = behind.latestCpTime - ahead.latestCpTime
@@ -171,20 +209,6 @@ namespace KoBufferUI {
 // #if DEV
 //         if (msDelta < 0) { warn('msDelta < 0! value: ' + msDelta); }
 // #endif
-
-        if (sameCp)
-            msDelta = Math::Abs(localPlayer.lastCpTime - targetCpInfo.lastCpTime);
-        else { // otherwise, we're at least (GameTime - player[cp]) ahead/behind
-            uint cpToCompare = Math::Max(targetCpInfo.cpCount, localPlayer.cpCount);
-            // diff between
-            auto aheadPlayer = isBehind ? targetCpInfo : localPlayer;
-            auto behindPlayer = isBehind ? localPlayer : targetCpInfo;
-
-            if (isBehind)
-                msDelta = CurrentRaceTime - targetCpInfo.cpTimes[cpToCompare];
-            else
-                msDelta = CurrentRaceTime - localPlayer.cpTimes[cpToCompare];
-        }
 
         vec4 bufColor = GetBufferTimeColor(sameCp, isBehind);
 

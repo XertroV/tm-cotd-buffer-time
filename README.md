@@ -1,8 +1,13 @@
 # COTD Buffer Time clone
 
-(todo get description from op plugins)
+This is a clone of [COTD Delta time](https://openplanet.dev/plugin/cotddeltako).
+COTD Buffer Time was written because COTD Delta time started crashing my game on the first CP (some of the time) ([github issue for PlayerState](https://github.com/thommie-echo/TMNext-PlayerState/issues/11)).
 
-Demo using MLHook v0.2.1
+*This plugin depends on __MLHook__ v0.3.0+ and __MLFeed: Race Data__. You must also install those plugins.*
+
+The aim of this plugin is to do basically the same thing as COTD Delta time.
+
+Also the font is monospaced for a nicer visual experience.
 
 License: Public Domain
 

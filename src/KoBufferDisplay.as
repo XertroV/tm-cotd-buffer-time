@@ -1,5 +1,7 @@
 const float TAU = 6.283185307179586;
 
+
+
 namespace KoBuffer {
 /* bugs:
 - when at 0, no behind shows up even if it should:
@@ -42,6 +44,10 @@ namespace KoBufferUI {
 
     [Setting hidden]
     bool g_koBufferUIVisible = true;
+
+    [Setting color category="KO Buffer Time" name="Show Preview?"]
+    bool Setting_ShowPreview = false;
+
     // const string menuIcon = Icons::ArrowsH;
     const string menuIcon = " Δt";
 
@@ -63,7 +69,21 @@ namespace KoBufferUI {
         return boldDisplayFont;
     }
 
+    void ShowPreview() {
+        int time = int(Time::Now);
+        int msOffset = (time % 2000) - 1000;
+        int cpOffset = Math::Abs((time % 2000) / 400 - 2);
+        bool isBehind = msOffset < 0;
+        msOffset = Math::Abs(msOffset);
+        DrawBufferTime(msOffset, isBehind, GetBufferTimeColor(cpOffset, isBehind));
+    }
+
     void Render() {
+        if (Setting_ShowPreview) {
+            ShowPreview();
+            return;
+        }
+
         if (!g_koBufferUIVisible) return;
         if (!KoBuffer::IsGameModeCotdKO) return;
 
@@ -175,7 +195,6 @@ namespace KoBufferUI {
         }
 
         vec4 bufColor = GetBufferTimeColor(cpDelta, isBehind);
-
         DrawBufferTime(msDelta, isBehind, bufColor);
     }
 

@@ -48,25 +48,18 @@ namespace KoBufferUI {
     [Setting color category="KO Buffer Time" name="Show Preview?"]
     bool Setting_ShowPreview = false;
 
+    [Setting drag category="KO Buffer Time" name="Display Position" description="Origin: Top left. Values: Proportion of screen (range: 0-100%)"]
+    vec2 Setting_BufferDisplayPosition = vec2(50, 87);
+
     // const string menuIcon = Icons::ArrowsH;
     const string menuIcon = " Δt";
 
-    int boldItalicDisplayFont = nvg::LoadFont("fonts/MontserratMono-BoldItalic.ttf", true, true);
-    int boldDisplayFont = nvg::LoadFont("fonts/MontserratMono-Bold.ttf", true, true);
     // int bufferDisplayFont = nvg::LoadFont("DroidSans.ttf", true, true);
 
     void RenderMenu() {
         if (UI::MenuItem("\\$faa\\$s" + menuIcon + "\\$z COTD Buffer Time", MenuShortcutStr, g_koBufferUIVisible)) {
             g_koBufferUIVisible = !g_koBufferUIVisible;
         }
-    }
-
-    [Setting category="KO Buffer Time" name="Use Italic Font?"]
-    bool Setting_BufferFontItalic = false;
-
-    int get_bufferDisplayFont() {
-        if (Setting_BufferFontItalic) return boldItalicDisplayFont;
-        return boldDisplayFont;
     }
 
     void ShowPreview() {
@@ -198,6 +191,36 @@ namespace KoBufferUI {
         DrawBufferTime(msDelta, isBehind, bufColor);
     }
 
+    int mediumDisplayFont = nvg::LoadFont("fonts/MontserratMono-Medium.ttf", true, true);
+    int mediumItalicDisplayFont = nvg::LoadFont("fonts/MontserratMono-MediumItalic.ttf", true, true);
+    int semiBoldDisplayFont = nvg::LoadFont("fonts/MontserratMono-SemiBold.ttf", true, true);
+    int semiBoldItalicDisplayFont = nvg::LoadFont("fonts/MontserratMono-SemiBoldItalic.ttf", true, true);
+    int boldDisplayFont = nvg::LoadFont("fonts/MontserratMono-Bold.ttf", true, true);
+    int boldItalicDisplayFont = nvg::LoadFont("fonts/MontserratMono-BoldItalic.ttf", true, true);
+
+    enum FontChoice {
+        Medium = 0,
+        Medium_Italic,
+        SemiBold,
+        SemiBold_Italic,
+        Bold,
+        Bold_Italic
+    }
+
+    []
+
+    array<int> fontChoiceToFont =
+        { mediumDisplayFont
+        , mediumItalicDisplayFont
+        , semiBoldDisplayFont
+        , semiBoldItalicDisplayFont
+        , boldDisplayFont
+        , boldItalicDisplayFont
+        } ;
+
+    [Setting category="KO Buffer Time" name="Font Choice"]
+    FontChoice Setting_Font = FontChoice::Bold;
+
     [Setting category="KO Buffer Time" name="Display Font Size" min="10" max="150"]
     float Setting_BufferFontSize = 60;
 
@@ -207,17 +230,13 @@ namespace KoBufferUI {
     [Setting category="KO Buffer Time" name="Stroke Width" min="1.0" max="20.0"]
     float Setting_StrokeWidth = 5.0;
 
-
-    [Setting drag category="KO Buffer Time" name="Display Position" description="Origin: Top left. Values: Proportion of screen (range: 0-100 %)"]
-    vec2 Setting_BufferDisplayPosition = vec2(50, 87);
-
     void DrawBufferTime(int msDelta, bool isBehind, vec4 bufColor) {
         nvg::Reset();
         string toDraw = (isBehind ? "-" : "+") + MsToSeconds(msDelta);
         auto screen = vec2(Draw::GetWidth(), Draw::GetHeight());
         vec2 pos = (screen * Setting_BufferDisplayPosition / vec2(100, 100));// - (size / 2);
 
-        nvg::FontFace(bufferDisplayFont);
+        nvg::FontFace(fontChoiceToFont[uint(Setting_Font)]);
         nvg::FontSize(Setting_BufferFontSize);
         nvg::TextAlign(nvg::Align::Center | nvg::Align::Middle);
         auto sizeWPad = nvg::TextBounds(toDraw.SubStr(0, toDraw.Length - 3) + "000") + vec2(20, 10);
@@ -246,9 +265,9 @@ namespace KoBufferUI {
         nvg::Text(pos, toDraw);
     }
 
-    [Setting color category="KO Buffer Time" name="Color: Ahead w/in 1 CP"]
+    [Setting color category="KO Buffer Time" name="Color: Ahead within 1 CP"]
     vec4 Col_AheadDefinite = vec4(0.000f, 0.788f, 0.103f, 1.000f);
-    [Setting color category="KO Buffer Time" name="Color: Behind w/in 1 CP"]
+    [Setting color category="KO Buffer Time" name="Color: Behind within 1 CP"]
     vec4 Col_BehindDefinite = vec4(0.942f, 0.502f, 0.000f, 1.000f);
 
     [Setting color category="KO Buffer Time" name="Color: Far Ahead (actively counts)"]
@@ -256,9 +275,10 @@ namespace KoBufferUI {
     [Setting color category="KO Buffer Time" name="Color: Far Behind (actively counts)"]
     vec4 Col_FarBehind = vec4(0.961f, 0.007f, 0.007f, 1.000f);
 
-    [Setting category="KO Buffer Time" name="Enable Buffer Time BG Color"]
+    [Setting category="KO Buffer Time" name="Enable Buffer Time BG Color" description="Add a ((semi-)transparent) background box to the displayed Buffer Time."]
     bool Setting_DrawBufferTimeBG = true;
-    [Setting color category="KO Buffer Time" name="Buffer Time BG Color" description="Add a background to the timer"]
+
+    [Setting color category="KO Buffer Time" name="Buffer Time BG Color" description="Background color of the timer if the above is enabled. (Transparency recommended.)"]
     vec4 Setting_BufferTimeBGColor = vec4(0.000f, 0.000f, 0.000f, 0.631f);
 
     vec4 GetBufferTimeColor(uint cpDelta, bool isBehind) {
@@ -267,10 +287,10 @@ namespace KoBufferUI {
             : (isBehind ? Col_FarBehind : Col_FarAhead);
     }
 
-    [Setting category="KO Buffer Time" name="Shortcut Key Enabled?"]
+    [Setting category="KO Buffer Time" name="Hotkey Enabled?" description="Enable a hotkey that toggles displaying Buffer Time."]
     bool Setting_ShortcutKeyEnabled = false;
 
-    [Setting category="KO Buffer Time" name="Shortcut Key Choice"]
+    [Setting category="KO Buffer Time" name="Hotkey Choice" description="Toggles displaying Buffer Time if the above is enabled."]
     VirtualKey Setting_ShortcutKey = VirtualKey::F5;
 
     string get_MenuShortcutStr() {

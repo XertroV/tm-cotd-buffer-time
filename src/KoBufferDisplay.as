@@ -1,3 +1,5 @@
+const float TAU = 6.283185307179586;
+
 namespace KoBuffer {
 /* bugs:
 - when at 0, no behind shows up even if it should:
@@ -79,6 +81,8 @@ namespace KoBufferUI {
         // if (koFeedHook is null || theHook is null) return;
         auto theHook = MLFeed::GetRaceData();
         auto koFeedHook = MLFeed::GetKoData();
+        if (koFeedHook.RoundNb == 0) return;
+        if (koFeedHook.KOsNumber == 0) return;
         // string localUser = LocalUserName;
         string localUser = GUIPlayerUserName;
         uint localUserRank = 0;
@@ -99,6 +103,9 @@ namespace KoBufferUI {
             if (player.raceRank == preCutoffRank) @preCpInfo = player;
             if (player.raceRank == postCutoffRank) @postCpInfo = player;
         }
+
+        bool isOut = (int(localPlayer.raceRank) > koFeedHook.PlayersNb - koFeedHook.KOsNumber)
+                && preCpInfo.cpCount == int(theHook.CPsToFinish);
 
         // if (localPlayer !is null)
         //     trace('local player not null');
@@ -138,6 +145,13 @@ namespace KoBufferUI {
 #endif
             return;
         }
+
+
+        if (isOut) {
+            DrawBufferTime(99999, true, GetBufferTimeColor(99, true));
+            return;
+        }
+
 
         MLFeed::PlayerCpInfo@ targetCpInfo;
         int msDelta;
@@ -196,27 +210,6 @@ namespace KoBufferUI {
             // - so at a minimum the buffer is CurrentRaceTime - ahead.lastCp
         }
 
-        // time Ahead is ahead of Behind is:
-        // 1. relative_cp_diff = behind.latestCpTime - ahead.latestCpTime
-        //   note: relative_cp_diff can be negative
-        // 2. absolute_cp_diff = ahead.latestCpTime - ahead.cpTimes[behind.cpCount]
-        // msDelta = relative + absolute
-        //
-        // sanity check:
-        // absolute should be == 0 when at same cp -> yes
-        // behind takes at least as long as absolute to catch up
-        // if Behind hit latest cp before Ahead (lower time), they are behind less than the absolute delta by the relative delta, so relative < 0 -> yes
-        // but if Behind hit latest cp after Ahead, then relative delta should be positive -> yes
-
-//         auto aheadPlayer = isBehind ? targetCpInfo : localPlayer;
-//         auto behindPlayer = isBehind ? localPlayer : targetCpInfo;
-//         int relativeCpDiff = behindPlayer.lastCpTime - aheadPlayer.lastCpTime;
-//         int absoluteCpDiff = sameCp ? 0 : (aheadPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount]);
-//         msDelta = absoluteCpDiff + relativeCpDiff;
-// #if DEV
-//         if (msDelta < 0) { warn('msDelta < 0! value: ' + msDelta); }
-// #endif
-
         vec4 bufColor = GetBufferTimeColor(cpDelta, isBehind);
 
         DrawBufferTime(msDelta, isBehind, bufColor);
@@ -224,6 +217,13 @@ namespace KoBufferUI {
 
     [Setting category="KO Buffer Time" name="Display Font Size" min="10" max="150"]
     float Setting_BufferFontSize = 60;
+
+    [Setting category="KO Buffer Time" name="Enable Stroke"]
+    bool Setting_EnableStroke = true;
+
+    [Setting category="KO Buffer Time" name="Stroke Width" min="1.0" max="20.0"]
+    float Setting_StrokeWidth = 5.0;
+
 
     [Setting drag category="KO Buffer Time" name="Display Position" description="Origin: Top left. Values: Proportion of screen (range: 0-100 %)"]
     vec2 Setting_BufferDisplayPosition = vec2(50, 87);
@@ -245,6 +245,18 @@ namespace KoBufferUI {
             nvg::Rect(pos - sizeWPad / 2, sizeWPad);
             nvg::Fill();
             nvg::ClosePath();
+        }
+
+        // "stroke"
+        if (Setting_EnableStroke) {
+            float sw = Setting_StrokeWidth;
+            nvg::FillColor(vec4(0,0,0,1));
+            float nCopies = 32; // this does not seem to be expensive
+            for (float i = 0; i < nCopies; i++) {
+                float angle = TAU * float(i) / nCopies;
+                vec2 offs = vec2(Math::Sin(angle), Math::Cos(angle)) * sw;
+                nvg::Text(pos + offs, toDraw);
+            }
         }
 
         nvg::FillColor(bufColor);

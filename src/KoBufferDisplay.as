@@ -48,7 +48,7 @@ namespace KoBufferUI {
     [Setting color category="KO Buffer Time" name="Show Preview?"]
     bool Setting_ShowPreview = false;
 
-    [Setting drag category="KO Buffer Time" name="Display Position" description="Origin: Top left. Values: Proportion of screen (range: 0-100%)"]
+    [Setting drag category="KO Buffer Time" name="Display Position" description="Origin: Top left. Values: Proportion of screen (range: 0-100%; default: (50, 87))"]
     vec2 Setting_BufferDisplayPosition = vec2(50, 87);
 
     // const string menuIcon = Icons::ArrowsH;

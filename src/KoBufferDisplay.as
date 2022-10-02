@@ -151,6 +151,7 @@ namespace KoBufferUI {
         isBehind = localPlayer.raceRank > targetCpInfo.raceRank; // should never be ==
         // are we at same CP?
         sameCp = localPlayer.cpCount == targetCpInfo.cpCount;
+        uint cpDelta = Math::Abs(localPlayer.cpCount - targetCpInfo.cpCount);
 
         // old way
         if (!newWay) {
@@ -175,8 +176,14 @@ namespace KoBufferUI {
             auto aheadPlayer = isBehind ? targetCpInfo : localPlayer;
             auto behindPlayer = isBehind ? localPlayer : targetCpInfo;
             uint minBuffer = aheadPlayer.cpCount == 0 ? 0 : (CurrentRaceTime - aheadPlayer.lastCpTime);
-            msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount];
-            if (msDelta < 0) msDelta = minBuffer;
+            uint expectedExtraCps = 0;
+            if (aheadPlayer.cpCount > behindPlayer.cpCount) {
+                expectedExtraCps = Math::Max(CurrentRaceTime - behindPlayer.lastCpTime, aheadPlayer.cpTimes[behindPlayer.cpCount + 1] - aheadPlayer.cpTimes[behindPlayer.cpCount]);
+                msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount + 1] + expectedExtraCps;
+            } else {
+                msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount];
+            }
+            // if (msDelta < 0) msDelta = minBuffer;
             // we replace msDelta with min buffer in this sorta situation:
             // - 3rd place will be eliminated
             // - you were in 3rd
@@ -210,7 +217,7 @@ namespace KoBufferUI {
 //         if (msDelta < 0) { warn('msDelta < 0! value: ' + msDelta); }
 // #endif
 
-        vec4 bufColor = GetBufferTimeColor(sameCp, isBehind);
+        vec4 bufColor = GetBufferTimeColor(cpDelta, isBehind);
 
         DrawBufferTime(msDelta, isBehind, bufColor);
     }
@@ -245,12 +252,12 @@ namespace KoBufferUI {
     }
 
     [Setting color category="KO Buffer Time" name="Color: Ahead w/in 1 CP"]
-    vec4 Col_AheadDefinite = vec4(0.008f, 1.000f, 0.000f, 1.000f);
+    vec4 Col_AheadDefinite = vec4(0.000f, 0.788f, 0.103f, 1.000f);
     [Setting color category="KO Buffer Time" name="Color: Behind w/in 1 CP"]
     vec4 Col_BehindDefinite = vec4(0.942f, 0.502f, 0.000f, 1.000f);
 
     [Setting color category="KO Buffer Time" name="Color: Far Ahead (actively counts)"]
-    vec4 Col_FarAhead = vec4(0.000f, 0.788f, 0.103f, 1.000f);
+    vec4 Col_FarAhead = vec4(0.008f, 1.000f, 0.000f, 1.000f);
     [Setting color category="KO Buffer Time" name="Color: Far Behind (actively counts)"]
     vec4 Col_FarBehind = vec4(0.961f, 0.007f, 0.007f, 1.000f);
 
@@ -259,8 +266,8 @@ namespace KoBufferUI {
     [Setting color category="KO Buffer Time" name="Buffer Time BG Color" description="Add a background to the timer"]
     vec4 Setting_BufferTimeBGColor = vec4(0.000f, 0.000f, 0.000f, 0.631f);
 
-    vec4 GetBufferTimeColor(bool sameCp, bool isBehind) {
-        return sameCp
+    vec4 GetBufferTimeColor(uint cpDelta, bool isBehind) {
+        return cpDelta < 2
             ? (isBehind ? Col_BehindDefinite : Col_AheadDefinite)
             : (isBehind ? Col_FarBehind : Col_FarAhead);
     }

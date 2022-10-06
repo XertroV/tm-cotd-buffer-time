@@ -109,9 +109,6 @@ namespace KoBufferUI {
             if (player.raceRank == postCutoffRank) @postCpInfo = player;
         }
 
-        bool isOut = (int(localPlayer.raceRank) > koFeedHook.PlayersNb - koFeedHook.KOsNumber)
-                && preCpInfo.cpCount == int(theHook.CPsToFinish);
-
         if (localPlayer is null) return;
         if (localPlayer is null || preCpInfo is null || postCpInfo is null) {
 #if DEV
@@ -123,6 +120,8 @@ namespace KoBufferUI {
             return;
         }
 
+        bool isOut = (int(localPlayer.raceRank) > koFeedHook.PlayersNb - koFeedHook.KOsNumber)
+                && preCpInfo.cpCount == int(theHook.CPsToFinish);
 
         if (isOut) {
             DrawBufferTime(99999, true, GetBufferTimeColor(99, true));

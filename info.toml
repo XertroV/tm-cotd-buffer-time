@@ -2,7 +2,7 @@
 name     = "COTD Buffer Time"
 author   = "XertroV"
 category = "MLHook"
-version  = "1.0.3"
+version  = "1.0.4"
 
 [script]
 #__DEFINES__

@@ -1,7 +1,5 @@
 const float TAU = 6.283185307179586;
 
-
-
 namespace KoBuffer {
 /* bugs:
 - when at 0, no behind shows up even if it should:
@@ -33,10 +31,58 @@ namespace KoBuffer {
         }
     }
 
+    string get_CurrentGameMode() {
+        auto app = cast<CTrackMania>(GetApp());
+        auto serverInfo = cast<CTrackManiaNetworkServerInfo>(app.Network.ServerInfo);
+        if (serverInfo is null) return "";
+        return serverInfo.CurGameModeStr;
+    }
+
     bool get_IsGameModeCotdKO() {
         return lastGM == "TM_KnockoutDaily_Online"
             || lastGM == "TM_Knockout_Debug"
             || lastGM == "TM_Knockout_Online";
+    }
+
+    CSmPlayer@ get_App_CurrPlayground_GameTerminal_GUIPlayer() {
+        auto cp = cast<CSmArenaClient>(GetApp().CurrentPlayground);
+        if (cp is null || cp.GameTerminals.Length < 1) return null;
+        auto GameTerminal = cp.GameTerminals[0];
+        if (GameTerminal is null) return null;
+        return cast<CSmPlayer>(GameTerminal.GUIPlayer);
+    }
+
+    string get_App_CurrPlayground_GameTerminal_GUIPlayerUserName() {
+        auto GUIPlayer = App_CurrPlayground_GameTerminal_GUIPlayer;
+        if (GUIPlayer is null) return "";
+        return GUIPlayer.User.Name;
+    }
+
+    CSmScriptPlayer@ get_GUIPlayer_ScriptAPI() {
+        auto GUIPlayer = App_CurrPlayground_GameTerminal_GUIPlayer;
+        if (GUIPlayer is null) return null;
+        return cast<CSmScriptPlayer>(GUIPlayer.ScriptAPI);
+    }
+
+    CSmPlayer@ get_App_CurrPlayground_GameTerminal_ControlledPlayer() {
+        auto cp = cast<CSmArenaClient>(GetApp().CurrentPlayground);
+        if (cp is null || cp.GameTerminals.Length < 1) return null;
+        auto GameTerminal = cp.GameTerminals[0];
+        if (GameTerminal is null) return null;
+        return cast<CSmPlayer>(GameTerminal.ControlledPlayer);
+    }
+
+    CSmScriptPlayer@ get_ControlledPlayer_ScriptAPI() {
+        auto ControlledPlayer = App_CurrPlayground_GameTerminal_ControlledPlayer;
+        if (ControlledPlayer is null) return null;
+        return cast<CSmScriptPlayer>(ControlledPlayer.ScriptAPI);
+    }
+
+    int get_CurrentRaceTime() {
+        if (GUIPlayer_ScriptAPI !is null)
+            return GUIPlayer_ScriptAPI.CurrentRaceTime;
+        if (ControlledPlayer_ScriptAPI is null) return 0;
+        return ControlledPlayer_ScriptAPI.CurrentRaceTime;
     }
 }
 
@@ -78,7 +124,7 @@ namespace KoBufferUI {
         }
 
         if (!g_koBufferUIVisible) return;
-        if (!KoBuffer::IsGameModeCotdKO) return;
+        if (!KoBuffer::IsGameModeCotdKO) return; GetApp(); // review helper
 
         // calc player's position relative to ko position
         // target: either player right before or after ko pos
@@ -88,7 +134,7 @@ namespace KoBufferUI {
         if (koFeedHook.RoundNb == 0) return;
         if (koFeedHook.KOsNumber == 0) return;
         // string localUser = LocalUserName;
-        string localUser = GUIPlayerUserName;
+        string localUser = KoBuffer::App_CurrPlayground_GameTerminal_GUIPlayerUserName; GetApp(); // review helper
         uint localUserRank = 0;
         uint nPlayers = koFeedHook.PlayersNb;
         uint nKOs = koFeedHook.KOsNumber;
@@ -135,6 +181,7 @@ namespace KoBufferUI {
         bool isBehind;
         bool sameCp;
         bool newWay = true;
+        auto currRaceTime = KoBuffer::CurrentRaceTime; GetApp(); // review helper
 
         // ahead of 1st player to be eliminated?
         if (localPlayer.raceRank < postCutoffRank) @targetCpInfo = postCpInfo;
@@ -156,9 +203,9 @@ namespace KoBufferUI {
                 auto behindPlayer = isBehind ? localPlayer : targetCpInfo;
 
                 if (isBehind)
-                    msDelta = CurrentRaceTime - targetCpInfo.cpTimes[cpToCompare];
+                    msDelta = currRaceTime - targetCpInfo.cpTimes[cpToCompare];
                 else
-                    msDelta = CurrentRaceTime - localPlayer.cpTimes[cpToCompare];
+                    msDelta = currRaceTime - localPlayer.cpTimes[cpToCompare];
             }
         }
 
@@ -166,10 +213,10 @@ namespace KoBufferUI {
         if (newWay) {
             auto aheadPlayer = isBehind ? targetCpInfo : localPlayer;
             auto behindPlayer = isBehind ? localPlayer : targetCpInfo;
-            uint minBuffer = aheadPlayer.cpCount == 0 ? 0 : (CurrentRaceTime - aheadPlayer.lastCpTime);
+            uint minBuffer = aheadPlayer.cpCount == 0 ? 0 : (currRaceTime - aheadPlayer.lastCpTime);
             uint expectedExtraCps = 0;
             if (aheadPlayer.cpCount > behindPlayer.cpCount) {
-                expectedExtraCps = Math::Max(CurrentRaceTime - behindPlayer.lastCpTime, aheadPlayer.cpTimes[behindPlayer.cpCount + 1] - aheadPlayer.cpTimes[behindPlayer.cpCount]);
+                expectedExtraCps = Math::Max(currRaceTime - behindPlayer.lastCpTime, aheadPlayer.cpTimes[behindPlayer.cpCount + 1] - aheadPlayer.cpTimes[behindPlayer.cpCount]);
                 msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount + 1] + expectedExtraCps;
             } else {
                 msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount];
@@ -222,7 +269,7 @@ namespace KoBufferUI {
     FontChoice Setting_Font = FontChoice::Bold;
 
     [Setting category="KO Buffer Time" name="Display Font Size" min="10" max="150"]
-    float Setting_BufferFontSize = 60;
+    float Setting_BufferFontSize = 60 * Draw::GetHeight() / 1440;
 
     [Setting category="KO Buffer Time" name="Enable Stroke"]
     bool Setting_EnableStroke = true;

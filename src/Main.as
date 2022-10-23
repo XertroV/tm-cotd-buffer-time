@@ -41,5 +41,5 @@ UI::InputBlocking OnKeyPress(bool down, VirtualKey key) {
 
 void NotifyDepError(const string &in msg) {
     warn(msg);
-    UI::ShowNotification("COTD Buffer Time: Dependency Error", msg, vec4(.9, .6, .1, .5), 15000);
+    UI::ShowNotification(Meta::ExecutingPlugin().Name + ": Dependency Error", msg, vec4(.9, .6, .1, .5), 15000);
 }

@@ -45,10 +45,13 @@ namespace KoBufferUI {
     [Setting hidden]
     bool g_koBufferUIVisible = true;
 
-    [Setting color category="KO Buffer Time" name="Show Preview?"]
+    [Setting category="KO Buffer Time" name="Show Preview?" color]
     bool Setting_ShowPreview = false;
 
-    [Setting drag category="KO Buffer Time" name="Display Position" description="Origin: Top left. Values: Proportion of screen (range: 0-100%; default: (50, 87))"]
+    [Setting category="KO Buffer Time" name="Plus for behind, Minus for ahead?" description="If true, when behind the timer will show a time like '+1.024', and '-1.024' when ahead. This is the minimum delta between players based on prior CPs. When this setting is false, the + and - signs are inverted, which shows the amount of buffer the player has (positive buffer being the number of seconds you can lose without being in a KO position)."]
+    bool Setting_SwapPlusMinus = true;
+
+    [Setting category="KO Buffer Time" name="Display Position" description="Origin: Top left. Values: Proportion of screen (range: 0-100%; default: (50, 87))" drag]
     vec2 Setting_BufferDisplayPosition = vec2(50, 87);
 
     // const string menuIcon = Icons::ArrowsH;
@@ -113,15 +116,18 @@ namespace KoBufferUI {
         if (localPlayer is null || preCpInfo is null || postCpInfo is null) {
 #if DEV
             trace('a cp time player was null!');
-            // trace(localPlayer is null ? 'y' : 'n');
-            // trace(preCpInfo is null ? 'y' : 'n');
-            // trace(postCpInfo is null ? 'y' : 'n');
+            trace(localPlayer is null ? 'y' : 'n');
+            trace(preCpInfo is null ? 'y' : 'n');
+            trace(postCpInfo is null ? 'y' : 'n');
 #endif
             return;
         }
 
         bool isOut = (int(localPlayer.raceRank) > koFeedHook.PlayersNb - koFeedHook.KOsNumber)
                 && preCpInfo.cpCount == int(theHook.CPsToFinish);
+
+        bool isSafe = (int(localPlayer.raceRank) > koFeedHook.PlayersNb - koFeedHook.KOsNumber)
+                && koFeedHook.GetPlayerState(postCpInfo.name).isDNF;
 
         if (isOut) {
             DrawBufferTime(99999, true, GetBufferTimeColor(99, true));
@@ -133,7 +139,6 @@ namespace KoBufferUI {
         int msDelta;
         bool isBehind;
         bool sameCp;
-        bool newWay = true;
 
         // ahead of 1st player to be eliminated?
         if (localPlayer.raceRank < postCutoffRank) @targetCpInfo = postCpInfo;
@@ -143,48 +148,26 @@ namespace KoBufferUI {
         sameCp = localPlayer.cpCount == targetCpInfo.cpCount;
         uint cpDelta = Math::Abs(localPlayer.cpCount - targetCpInfo.cpCount);
 
-        // old way
-        if (!newWay) {
-
-            if (sameCp)
-                msDelta = Math::Abs(localPlayer.lastCpTime - targetCpInfo.lastCpTime);
-            else { // otherwise, we're at least (GameTime - player[cp]) ahead/behind
-                uint cpToCompare = Math::Max(targetCpInfo.cpCount, localPlayer.cpCount);
-                // diff between
-                auto aheadPlayer = isBehind ? targetCpInfo : localPlayer;
-                auto behindPlayer = isBehind ? localPlayer : targetCpInfo;
-
-                if (isBehind)
-                    msDelta = CurrentRaceTime - targetCpInfo.cpTimes[cpToCompare];
-                else
-                    msDelta = CurrentRaceTime - localPlayer.cpTimes[cpToCompare];
-            }
+        auto aheadPlayer = isBehind ? targetCpInfo : localPlayer;
+        auto behindPlayer = isBehind ? localPlayer : targetCpInfo;
+        uint expectedExtraCps = 0;
+        if (aheadPlayer.cpCount > behindPlayer.cpCount) {
+            expectedExtraCps = Math::Max(CurrentRaceTime - behindPlayer.lastCpTime, aheadPlayer.cpTimes[behindPlayer.cpCount + 1] - aheadPlayer.cpTimes[behindPlayer.cpCount]);
+            msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount + 1] + expectedExtraCps;
+        } else {
+            msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount];
         }
-
-        // new way
-        if (newWay) {
-            auto aheadPlayer = isBehind ? targetCpInfo : localPlayer;
-            auto behindPlayer = isBehind ? localPlayer : targetCpInfo;
-            uint minBuffer = aheadPlayer.cpCount == 0 ? 0 : (CurrentRaceTime - aheadPlayer.lastCpTime);
-            uint expectedExtraCps = 0;
-            if (aheadPlayer.cpCount > behindPlayer.cpCount) {
-                expectedExtraCps = Math::Max(CurrentRaceTime - behindPlayer.lastCpTime, aheadPlayer.cpTimes[behindPlayer.cpCount + 1] - aheadPlayer.cpTimes[behindPlayer.cpCount]);
-                msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount + 1] + expectedExtraCps;
-            } else {
-                msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount];
-            }
-            // if (msDelta < 0) msDelta = minBuffer;
-            // we replace msDelta with min buffer in this sorta situation:
-            // - 3rd place will be eliminated
-            // - you were in 3rd
-            // - so buffer is negative and diff between cp times
-            // - but then you cross cp first before other guy
-            // - so you're the ahead player, however, the diff CP times for prior CP was negative
-            // - you haven't gained the -'ve amount in buffer, tho, b/c the other player might get CP in 0.001s or whatever.
-            // - so all you know is that you have no negative buffer
-            // - and you know how much +'ve buffer you have once the guy crosses the line, which happens X seconsd later
-            // - so at a minimum the buffer is CurrentRaceTime - ahead.lastCp
-        }
+        // if (msDelta < 0) msDelta = minBuffer;
+        // we replace msDelta with min buffer in this sorta situation:
+        // - 3rd place will be eliminated
+        // - you were in 3rd
+        // - so buffer is negative and diff between cp times
+        // - but then you cross cp first before other guy
+        // - so you're the ahead player, however, the diff CP times for prior CP was negative
+        // - you haven't gained the -'ve amount in buffer, tho, b/c the other player might get CP in 0.001s or whatever.
+        // - so all you know is that you have no negative buffer
+        // - and you know how much +'ve buffer you have once the guy crosses the line, which happens X seconsd later
+        // - so at a minimum the buffer is CurrentRaceTime - ahead.lastCp
 
         vec4 bufColor = GetBufferTimeColor(cpDelta, isBehind);
         DrawBufferTime(msDelta, isBehind, bufColor);
@@ -206,8 +189,6 @@ namespace KoBufferUI {
         Bold_Italic
     }
 
-    []
-
     array<int> fontChoiceToFont =
         { mediumDisplayFont
         , mediumItalicDisplayFont
@@ -215,7 +196,7 @@ namespace KoBufferUI {
         , semiBoldItalicDisplayFont
         , boldDisplayFont
         , boldItalicDisplayFont
-        } ;
+        };
 
     [Setting category="KO Buffer Time" name="Font Choice"]
     FontChoice Setting_Font = FontChoice::Bold;
@@ -231,7 +212,7 @@ namespace KoBufferUI {
 
     void DrawBufferTime(int msDelta, bool isBehind, vec4 bufColor) {
         nvg::Reset();
-        string toDraw = (isBehind ? "-" : "+") + MsToSeconds(msDelta);
+        string toDraw = ((isBehind ^^ Setting_SwapPlusMinus) ? "-" : "+") + MsToSeconds(msDelta);
         auto screen = vec2(Draw::GetWidth(), Draw::GetHeight());
         vec2 pos = (screen * Setting_BufferDisplayPosition / vec2(100, 100));// - (size / 2);
 

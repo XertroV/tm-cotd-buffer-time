@@ -126,11 +126,16 @@ namespace KoBufferUI {
         bool isOut = (int(localPlayer.raceRank) > koFeedHook.PlayersNb - koFeedHook.KOsNumber)
                 && preCpInfo.cpCount == int(theHook.CPsToFinish);
 
-        bool isSafe = (int(localPlayer.raceRank) > koFeedHook.PlayersNb - koFeedHook.KOsNumber)
+        bool isSafe = (int(localPlayer.raceRank) <= koFeedHook.PlayersNb - koFeedHook.KOsNumber)
                 && koFeedHook.GetPlayerState(postCpInfo.name).isDNF;
 
         if (isOut) {
             DrawBufferTime(99999, true, GetBufferTimeColor(99, true));
+            return;
+        }
+
+        if (isSafe) {
+            DrawBufferTime(99999, false, GetBufferTimeColor(99, false));
             return;
         }
 
@@ -211,6 +216,7 @@ namespace KoBufferUI {
     float Setting_StrokeWidth = 5.0;
 
     void DrawBufferTime(int msDelta, bool isBehind, vec4 bufColor) {
+        msDelta = Math::Abs(msDelta);
         nvg::Reset();
         string toDraw = ((isBehind ^^ Setting_SwapPlusMinus) ? "-" : "+") + MsToSeconds(msDelta);
         auto screen = vec2(Draw::GetWidth(), Draw::GetHeight());

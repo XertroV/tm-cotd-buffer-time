@@ -29,6 +29,7 @@ void Render() {
 }
 
 void RenderInterface() {
+    KoBufferUI::RenderInterface();
 }
 
 void RenderMenu() {

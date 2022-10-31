@@ -8,14 +8,20 @@ namespace KoBuffer {
 
 */
     void Main() {
+        dev_trace("KoBuffer::Main");
         startnew(InitCoro);
     }
 
     void InitCoro() {
+        dev_trace("KoBuffer::InitCoro");
         startnew(MainCoro);
+        if (KoBufferUI::Setting_BufferFontSize < 0.1) {
+            KoBufferUI::Setting_BufferFontSize = 60 * Draw::GetHeight() / 1440;
+        }
     }
 
     void MainCoro() {
+        dev_trace("KoBuffer::MainCoro");
         while (true) {
             yield();
             CheckGMChange();
@@ -26,6 +32,7 @@ namespace KoBuffer {
     void CheckGMChange() {
         if (CurrentGameMode != lastGM) {
             lastGM = CurrentGameMode;
+            dev_trace("Set game mode: " + lastGM);
             // if (IsGameModeCotdKO) {
             // }
         }
@@ -88,11 +95,11 @@ namespace KoBuffer {
 
 namespace KoBufferUI {
 
-    [Setting hidden]
-    bool g_koBufferUIVisible = true;
-
-    [Setting category="KO Buffer Time" name="Show Preview?" color]
+    [Setting category="KO Buffer Time" name="Show Preview?" description="Shows a preview (works anywhere)"]
     bool Setting_ShowPreview = false;
+
+    [Setting category="KO Buffer Time" name="Buffer Time Visible during KO matches?" description="Whether the timer shows up at all or not during KO matches. If unchecked, the plugin will not draw anything to the screen. This is the same setting as checking/unchecking this plugin in the Scripts menu."]
+    bool g_koBufferUIVisible = true;
 
     [Setting category="KO Buffer Time" name="Plus for behind, Minus for ahead?" description="If true, when behind the timer will show a time like '+1.024', and '-1.024' when ahead. This is the minimum delta between players based on prior CPs. When this setting is false, the + and - signs are inverted, which shows the amount of buffer the player has (positive buffer being the number of seconds you can lose without being in a KO position)."]
     bool Setting_SwapPlusMinus = true;
@@ -145,7 +152,7 @@ namespace KoBufferUI {
         auto koFeedHook = MLFeed::GetKoData();
 
         if (!Setting_SafeIndicatorInNoKO) {
-            if (koFeedHook.RoundNb == 0) return;
+            // if (koFeedHook.RoundNb == 0) return;
             if (koFeedHook.KOsNumber == 0) return;
         }
 
@@ -404,13 +411,15 @@ namespace KoBufferUI {
     UI::InputBlocking OnKeyPress(bool down, VirtualKey key) {
         if (Setting_ShortcutKeyEnabled && down && key == Setting_ShortcutKey) {
             g_koBufferUIVisible = !g_koBufferUIVisible;
+            UI::ShowNotification(Meta::ExecutingPlugin().Name, "Toggled COTD buffer time visibility. (Currently visible? " + (g_koBufferUIVisible ? Icons::Check : Icons::Times) + ")");
+            return UI::InputBlocking::Block;
         }
         return UI::InputBlocking::DoNothing;
     }
 
     /* DEBUG WINDOW: SHOW ALL */
 
-    [Setting category="Extra/Debug" name="Show All Players' Deltas during KO" description="When checked a window will appear (if the interface is on) during KO matches that shows all deltas."]
+    [Setting category="Extra/Debug" name="Show All Players' Deltas" description="When checked a window will appear (if the interface is on) that shows all deltas for the current game (regardless of whether it's KO or not)."]
     bool S_ShowAllInfoDebug = false;
 
     void RenderInterface() {
@@ -468,7 +477,7 @@ namespace KoBufferUI {
                 UI::ListClipper clip(sorted.Length);
 
                 while (clip.Step()) {
-                    for (uint i = clip.DisplayStart; i < clip.DisplayEnd; i++) {
+                    for (int i = clip.DisplayStart; i < clip.DisplayEnd; i++) {
                         auto player = sorted[i];
                         auto bt = CalcBufferTime(theHook, koFeedHook, preCpInfo, postCpInfo, player, postCutoffRank);
                         auto pm = GetPlusMinusFor(bt.isBehind);
@@ -519,4 +528,10 @@ namespace KoBufferUI {
         UI::Text(v ? Icons::Check : Icons::Times);
         UI::PopStyleColor();
     }
+}
+
+void dev_trace(const string &in msg) {
+#if DEV
+    trace(msg);
+#endif
 }

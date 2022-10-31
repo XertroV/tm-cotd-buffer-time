@@ -8,13 +8,15 @@ void Main() {
     depMLFeed = true;
 #endif
     if (depMLFeed && depMLHook) {
+        print("cotd buffer time starting.");
         startnew(KoBuffer::Main);
     } else {
         if (!depMLHook) {
             NotifyDepError("Requires MLHook");
-        }
-        if (!depMLFeed) {
+        } else if (!depMLFeed) {
             NotifyDepError("Requires MLFeed: Race Data");
+        } else {
+            NotifyDepError("Unknown dependency error.");
         }
     }
 }
@@ -38,6 +40,13 @@ void RenderMenu() {
 
 UI::InputBlocking OnKeyPress(bool down, VirtualKey key) {
     return KoBufferUI::OnKeyPress(down, key);
+}
+
+/** Called when a setting in the settings panel was changed. */
+void OnSettingsChanged() {
+    if (KoBufferUI::Setting_BufferFontSize < 0.1) {
+        KoBufferUI::Setting_BufferFontSize = 60 * Draw::GetHeight() / 1440;
+    }
 }
 
 void NotifyDepError(const string &in msg) {

@@ -86,10 +86,16 @@ namespace KoBuffer {
     }
 
     int get_CurrentRaceTime() {
+        if (GetApp().Network.PlaygroundClientScriptAPI is null) return 0;
+        int gameTime = GetApp().Network.PlaygroundClientScriptAPI.GameTime;
+        int startTime = -1;
         if (GUIPlayer_ScriptAPI !is null)
-            return GUIPlayer_ScriptAPI.CurrentRaceTime;
-        if (ControlledPlayer_ScriptAPI is null) return 0;
-        return ControlledPlayer_ScriptAPI.CurrentRaceTime;
+            startTime = GUIPlayer_ScriptAPI.StartTime;
+        else if (ControlledPlayer_ScriptAPI !is null)
+            startTime = ControlledPlayer_ScriptAPI.StartTime;
+        if (startTime < 0) return 0;
+        return gameTime - startTime;
+        // return Math::Abs(gameTime - startTime);  // when formatting via Time::Format, negative ints don't work.
     }
 }
 

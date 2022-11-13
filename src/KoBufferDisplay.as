@@ -128,7 +128,7 @@ namespace KoBufferUI {
     // int bufferDisplayFont = nvg::LoadFont("DroidSans.ttf", true, true);
 
     void RenderMenu() {
-        if (UI::MenuItem("\\$faa\\$s" + menuIcon + "\\$z COTD Buffer Time", MenuShortcutStr, g_koBufferUIVisible)) {
+        if (UI::MenuItem("\\$faa\\$s" + menuIcon + "\\$z " + Meta::ExecutingPlugin().Name, MenuShortcutStr, g_koBufferUIVisible)) {
             g_koBufferUIVisible = !g_koBufferUIVisible;
         }
     }
@@ -417,7 +417,7 @@ namespace KoBufferUI {
     UI::InputBlocking OnKeyPress(bool down, VirtualKey key) {
         if (Setting_ShortcutKeyEnabled && down && key == Setting_ShortcutKey) {
             g_koBufferUIVisible = !g_koBufferUIVisible;
-            UI::ShowNotification(Meta::ExecutingPlugin().Name, "Toggled COTD buffer time visibility. (Currently visible? " + (g_koBufferUIVisible ? Icons::Check : Icons::Times) + ")");
+            UI::ShowNotification(Meta::ExecutingPlugin().Name, "Toggled " + Meta::ExecutingPlugin().Name + " visibility. (Currently visible? " + (g_koBufferUIVisible ? Icons::Check : Icons::Times) + ")");
             return UI::InputBlocking::Block;
         }
         return UI::InputBlocking::DoNothing;

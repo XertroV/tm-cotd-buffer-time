@@ -85,9 +85,9 @@ namespace KoBuffer {
         return cast<CSmScriptPlayer>(ControlledPlayer.ScriptAPI);
     }
 
-    int get_CurrentRaceTime() {
-        if (GetApp().Network.PlaygroundClientScriptAPI is null) return 0;
-        int gameTime = GetApp().Network.PlaygroundClientScriptAPI.GameTime;
+    int GetCurrentRaceTime(CGameCtnApp@ app) {
+        if (app.Network.PlaygroundClientScriptAPI is null) return 0;
+        int gameTime = app.Network.PlaygroundClientScriptAPI.GameTime;
         int startTime = -1;
         if (GUIPlayer_ScriptAPI !is null)
             startTime = GUIPlayer_ScriptAPI.StartTime;
@@ -101,25 +101,25 @@ namespace KoBuffer {
 
 namespace KoBufferUI {
 
-    [Setting category="KO Buffer Time" name="Show Preview?" description="Shows a preview (works anywhere)"]
+    [Setting category="Buffer Time Display" name="Show Preview?" description="Shows a preview (works anywhere)"]
     bool Setting_ShowPreview = false;
 
-    [Setting category="KO Buffer Time" name="Buffer Time Visible during KO matches?" description="Whether the timer shows up at all or not during KO matches. If unchecked, the plugin will not draw anything to the screen. This is the same setting as checking/unchecking this plugin in the Scripts menu."]
+    [Setting category="Buffer Time Display" name="Buffer Time Visible during KO matches?" description="Whether the timer shows up at all or not during KO matches. If unchecked, the plugin will not draw anything to the screen. This is the same setting as checking/unchecking this plugin in the Scripts menu."]
     bool g_koBufferUIVisible = true;
 
-    [Setting category="KO Buffer Time" name="Plus for behind, Minus for ahead?" description="If true, when behind the timer will show a time like '+1.024', and '-1.024' when ahead. This is the minimum delta between players based on prior CPs. When this setting is false, the + and - signs are inverted, which shows the amount of buffer the player has (positive buffer being the number of seconds you can lose without being in a KO position)."]
+    [Setting category="Buffer Time Display" name="Plus for behind, Minus for ahead?" description="If true, when behind the timer will show a time like '+1.024', and '-1.024' when ahead. This is the minimum delta between players based on prior CPs. When this setting is false, the + and - signs are inverted, which shows the amount of buffer the player has (positive buffer being the number of seconds you can lose without being in a KO position)."]
     bool Setting_SwapPlusMinus = true;
 
-    [Setting category="KO Buffer Time" name="Show SAFE indicator when elimination is imposible?" description="If true, when enough players DNF or disconnect, the timer will change to the SAFE indicator (99.999 green)."]
+    [Setting category="Buffer Time Display" name="Show SAFE indicator when elimination is imposible?" description="If true, when enough players DNF or disconnect, the timer will change to the SAFE indicator (99.999 green)."]
     bool Setting_ShowSafeIndicatorEver = true;
 
-    [Setting category="KO Buffer Time" name="Show OUT indicator when elimination is inevitable?" description="If true, when you're guarenteed to be knocked out, the timer will change to the OUT indicator (99.999 red)."]
+    [Setting category="Buffer Time Display" name="Show OUT indicator when elimination is inevitable?" description="If true, when you're guarenteed to be knocked out, the timer will change to the OUT indicator (99.999 red)."]
     bool Setting_ShowOutIndicatorEver = true;
 
-    [Setting category="KO Buffer Time" name="Show SAFE indicator during No KO round?" description="If true, during the No KO round the timer will change to the SAFE indicator (99.999 green)."]
+    [Setting category="Buffer Time Display" name="Show SAFE indicator during No KO round?" description="If true, during the No KO round the timer will change to the SAFE indicator (99.999 green)."]
     bool Setting_SafeIndicatorInNoKO = true;
 
-    [Setting category="KO Buffer Time" name="Display Position" description="Origin: Top left. Values: Proportion of screen (range: 0-100%; default: (50, 87))" drag]
+    [Setting category="Buffer Time Display" name="Display Position" description="Origin: Top left. Values: Proportion of screen (range: 0-100%; default: (50, 87))" drag]
     vec2 Setting_BufferDisplayPosition = vec2(50, 87);
 
     // const string menuIcon = Icons::ArrowsH;
@@ -164,7 +164,6 @@ namespace KoBufferUI {
 
         // string localUser = LocalUserName;
         string localUser = KoBuffer::App_CurrPlayground_GameTerminal_GUIPlayerUserName; GetApp(); // review helper
-        uint localUserRank = 0;
         uint nPlayers = koFeedHook.PlayersNb;
         uint nKOs = koFeedHook.KOsNumber;
         uint preCutoffRank = nPlayers - nKOs;
@@ -204,9 +203,12 @@ namespace KoBufferUI {
                         bool drawBufferTime = false
     ) {
         if (localPlayer is null) return BufferTime(null, 0, 1, true, false, false, false, false);
-
         auto localPlayerState = koFeedHook.GetPlayerState(localPlayer.name);
-        bool localPlayerLives = !localPlayerState.isDNF && localPlayerState.isAlive;
+
+        bool localPlayerLives = localPlayerState is null || (!localPlayerState.isDNF && localPlayerState.isAlive);
+        bool isAlive = localPlayerState is null || localPlayerState.isAlive;
+        bool isDNF = localPlayerState !is null && localPlayerState.isDNF;
+
 
         if (preCpInfo is null) return BufferTime(localPlayer, 99999, 99, false, true, false, localPlayerState.isAlive, localPlayerState.isDNF);
 
@@ -234,10 +236,7 @@ namespace KoBufferUI {
 
 
         MLFeed::PlayerCpInfo@ targetCpInfo;
-        int msDelta;
         bool isBehind;
-        bool sameCp;
-        auto currRaceTime = KoBuffer::CurrentRaceTime; GetApp(); // review helper
 
         // ahead of 1st player to be eliminated?
         if (localPlayer.raceRank < postCutoffRank) @targetCpInfo = postCpInfo;
@@ -248,9 +247,15 @@ namespace KoBufferUI {
         }
 
         isBehind = localPlayer.raceRank > targetCpInfo.raceRank; // should never be ==
-        // are we at same CP?
-        sameCp = localPlayer.cpCount == targetCpInfo.cpCount;
         uint cpDelta = Math::Abs(localPlayer.cpCount - targetCpInfo.cpCount);
+
+        int msDelta = CalcMsDelta(WrapPlayerCpInfo(localPlayer), isBehind, WrapPlayerCpInfo(targetCpInfo));
+        return BufferTime(localPlayer, msDelta, cpDelta, isBehind, isSafe, isOut, isAlive, isDNF);
+    }
+
+    int CalcMsDelta(CPAbstraction@ localPlayer, bool isBehind, CPAbstraction@ targetCpInfo) {
+        int msDelta;
+        auto currRaceTime = KoBuffer::GetCurrentRaceTime(GetApp());
 
         auto aheadPlayer = isBehind ? targetCpInfo : localPlayer;
         auto behindPlayer = isBehind ? localPlayer : targetCpInfo;
@@ -261,26 +266,15 @@ namespace KoBufferUI {
         } else if (aheadPlayer.cpCount < behindPlayer.cpCount) {
             // should never be true
             msDelta = 98765;
+            warn("Ahead Player has fewer CPs than Behind Player!");
         } else {
             msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount];
         }
-        // if (msDelta < 0) msDelta = minBuffer;
-        // we replace msDelta with min buffer in this sorta situation:
-        // - 3rd place will be eliminated
-        // - you were in 3rd
-        // - so buffer is negative and diff between cp times
-        // - but then you cross cp first before other guy
-        // - so you're the ahead player, however, the diff CP times for prior CP was negative
-        // - you haven't gained the -'ve amount in buffer, tho, b/c the other player might get CP in 0.001s or whatever.
-        // - so all you know is that you have no negative buffer
-        // - and you know how much +'ve buffer you have once the guy crosses the line, which happens X seconsd later
-        // - so at a minimum the buffer is CurrentRaceTime - ahead.lastCp
-
-        return BufferTime(localPlayer, msDelta, cpDelta, isBehind, isSafe, isOut, localPlayerState.isAlive, localPlayerState.isDNF);
+        return msDelta;
     }
 
     class BufferTime {
-        MLFeed::PlayerCpInfo@ localPlayer;
+        // MLFeed::PlayerCpInfo@ localPlayer;
         uint msDelta;
         uint cpDelta;
         bool isBehind;
@@ -288,8 +282,11 @@ namespace KoBufferUI {
         bool isOut;
         bool isAlive;
         bool isDNF;
-        BufferTime(MLFeed::PlayerCpInfo@ _localPlayer, uint _msDelta, uint _cpDelta, bool _isBehind, bool _isSafe, bool _isOut, bool _isAlive, bool _isDNF) {
-            @localPlayer = _localPlayer;
+        BufferTime(
+            MLFeed::PlayerCpInfo@ _localPlayer,
+            uint _msDelta, uint _cpDelta, bool _isBehind, bool _isSafe, bool _isOut, bool _isAlive, bool _isDNF
+        ) {
+            // @localPlayer = _localPlayer;
             msDelta = _msDelta;
             cpDelta = _cpDelta;
             isBehind = _isBehind;
@@ -325,19 +322,19 @@ namespace KoBufferUI {
         , boldItalicDisplayFont
         };
 
-    [Setting category="KO Buffer Time" name="Font Choice"]
+    [Setting category="Buffer Time Display" name="Font Choice"]
     FontChoice Setting_Font = FontChoice::Bold;
 
-    [Setting category="KO Buffer Time" name="Display Font Size" min="10" max="150"]
+    [Setting category="Buffer Time Display" name="Display Font Size" min="10" max="150"]
     float Setting_BufferFontSize = 60 * Draw::GetHeight() / 1440;
 
-    [Setting category="KO Buffer Time" name="Enable Stroke"]
+    [Setting category="Buffer Time Display" name="Enable Stroke"]
     bool Setting_EnableStroke = true;
 
-    [Setting category="KO Buffer Time" name="Stroke Width" min="1.0" max="20.0"]
+    [Setting category="Buffer Time Display" name="Stroke Width" min="1.0" max="20.0"]
     float Setting_StrokeWidth = 5.0;
 
-    [Setting category="KO Buffer Time" name="Stroke Alpha" description="FYI it's not really alpha -- but it's an approximation; not perfect." min="0.0" max="1.0"]
+    [Setting category="Buffer Time Display" name="Stroke Alpha" description="FYI it's not really alpha -- but it's an approximation; not perfect." min="0.0" max="1.0"]
     float Setting_StrokeAlpha = 1.0;
 
     string GetPlusMinusFor(bool isBehind) {
@@ -380,20 +377,20 @@ namespace KoBufferUI {
         nvg::Text(pos, toDraw);
     }
 
-    [Setting color category="KO Buffer Time" name="Color: Ahead within 1 CP"]
+    [Setting color category="Buffer Time Display" name="Color: Ahead within 1 CP"]
     vec4 Col_AheadDefinite = vec4(0.000f, 0.788f, 0.103f, 1.000f);
-    [Setting color category="KO Buffer Time" name="Color: Behind within 1 CP"]
+    [Setting color category="Buffer Time Display" name="Color: Behind within 1 CP"]
     vec4 Col_BehindDefinite = vec4(0.942f, 0.502f, 0.000f, 1.000f);
 
-    [Setting color category="KO Buffer Time" name="Color: Far Ahead"]
+    [Setting color category="Buffer Time Display" name="Color: Far Ahead"]
     vec4 Col_FarAhead = vec4(0.008f, 1.000f, 0.000f, 1.000f);
-    [Setting color category="KO Buffer Time" name="Color: Far Behind"]
+    [Setting color category="Buffer Time Display" name="Color: Far Behind"]
     vec4 Col_FarBehind = vec4(0.961f, 0.007f, 0.007f, 1.000f);
 
-    [Setting category="KO Buffer Time" name="Enable Buffer Time BG Color" description="Add a ((semi-)transparent) background box to the displayed Buffer Time."]
+    [Setting category="Buffer Time Display" name="Enable Buffer Time BG Color" description="Add a ((semi-)transparent) background box to the displayed Buffer Time."]
     bool Setting_DrawBufferTimeBG = true;
 
-    [Setting color category="KO Buffer Time" name="Buffer Time BG Color" description="Background color of the timer if the above is enabled. (Transparency recommended.)"]
+    [Setting color category="Buffer Time Display" name="Buffer Time BG Color" description="Background color of the timer if the above is enabled. (Transparency recommended.)"]
     vec4 Setting_BufferTimeBGColor = vec4(0.000f, 0.000f, 0.000f, 0.631f);
 
     vec4 GetBufferTimeColor(uint cpDelta, bool isBehind) {
@@ -402,10 +399,10 @@ namespace KoBufferUI {
             : (isBehind ? Col_FarBehind : Col_FarAhead);
     }
 
-    [Setting category="KO Buffer Time" name="Hotkey Enabled?" description="Enable a hotkey that toggles displaying Buffer Time."]
+    [Setting category="Buffer Time Display" name="Hotkey Enabled?" description="Enable a hotkey that toggles displaying Buffer Time."]
     bool Setting_ShortcutKeyEnabled = false;
 
-    [Setting category="KO Buffer Time" name="Hotkey Choice" description="Toggles displaying Buffer Time if the above is enabled."]
+    [Setting category="Buffer Time Display" name="Hotkey Choice" description="Toggles displaying Buffer Time if the above is enabled."]
     VirtualKey Setting_ShortcutKey = VirtualKey::F5;
 
     string get_MenuShortcutStr() {

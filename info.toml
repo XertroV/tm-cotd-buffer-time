@@ -1,8 +1,8 @@
 [meta]
-name     = "COTD Buffer Time"
+name     = "Buffer Time"
 author   = "XertroV"
 category = "MLHook"
-version  = "1.0.7"
+version  = "1.0.8"
 
 [script]
 #__DEFINES__

@@ -51,6 +51,15 @@ namespace KoBuffer {
             || lastGM == "TM_Knockout_Online";
     }
 
+    bool get_IsGameModeTA() {
+        return lastGM == "TM_TimeAttack_Online"
+            || lastGM == "TM_TimeAttackDaily_Online"
+            || lastGM == "TM_TimeAttack"
+            || lastGM == "TM_TimeAttack_Debug"
+            || lastGM == "TM_Campaign_Local"
+            ;
+    }
+
     CSmPlayer@ get_App_CurrPlayground_GameTerminal_GUIPlayer() {
         auto cp = cast<CSmArenaClient>(GetApp().CurrentPlayground);
         if (cp is null || cp.GameTerminals.Length < 1) return null;
@@ -147,8 +156,46 @@ namespace KoBufferUI {
             ShowPreview();
             return;
         }
-
         if (!g_koBufferUIVisible) return;
+
+        if (S_ShowBufferTimeInKO && KoBuffer::IsGameModeCotdKO)
+            Render_KO();
+        else if (S_ShowBufferTimeInTA && KoBuffer::IsGameModeTA)
+            Render_TA();
+    }
+
+    // show buffer in TA against personal best
+    void Render_TA() {
+        auto ghostData = MLFeed::GetGhostData();
+        if (ghostData.NbGhosts == 0) return; // we need a ghost to get times from
+        auto raceData = MLFeed::GetRaceData();
+        auto playerName = KoBuffer::App_CurrPlayground_GameTerminal_GUIPlayerUserName;
+        auto localPlayer = raceData.GetPlayer(playerName);
+        auto crt = KoBuffer::GetCurrentRaceTime(GetApp());
+        auto bestGhost = ghostData.Ghosts[0];
+        const MLFeed::GhostInfo@ bestPb = null;
+        for (uint i = 0; i < ghostData.NbGhosts; i++) {
+            auto g = ghostData.Ghosts[i];
+            if (g.Nickname == "?Personal Best" || g.Nickname == playerName) {
+                if (bestPb is null || bestPb.Result_Time > g.Result_Time) {
+                    @bestPb = g;
+                }
+            }
+            if (bestGhost.Result_Time > g.Result_Time) {
+                @bestGhost = g;
+            }
+        }
+        auto lp = WrapPlayerCpInfo(localPlayer);
+        auto bg = WrapGhostInfo(bestGhost, crt);
+        // auto pb = WrapGhostInfo(bestPb !is null ? bestPb : bestGhost, crt); // todo handle this case later
+        bool isBehind = lp > bg;
+        // print("lp: " + lp.ToString() + ", bg: " + bg.ToString() + ", isBehind: " + tostring(isBehind));
+        auto msDelta = CalcMsDelta(lp, isBehind, bg);
+        uint cpDelta = Math::Abs(lp.cpCount - bg.cpCount);
+        DrawBufferTime(msDelta, isBehind, GetBufferTimeColor(cpDelta, isBehind));
+    }
+
+    void Render_KO() {
         if (!KoBuffer::IsGameModeCotdKO) return; GetApp(); // review helper
 
         // calc player's position relative to ko position
@@ -162,7 +209,6 @@ namespace KoBufferUI {
             if (koFeedHook.KOsNumber == 0) return;
         }
 
-        // string localUser = LocalUserName;
         string localUser = KoBuffer::App_CurrPlayground_GameTerminal_GUIPlayerUserName; GetApp(); // review helper
         uint nPlayers = koFeedHook.PlayersNb;
         uint nKOs = koFeedHook.KOsNumber;
@@ -185,7 +231,7 @@ namespace KoBufferUI {
 
         if (localPlayer is null) return;
 
-        auto bufferTime = CalcBufferTime(theHook, koFeedHook, preCpInfo, postCpInfo, localPlayer, postCutoffRank, true);
+        auto bufferTime = CalcBufferTime_KO(theHook, koFeedHook, preCpInfo, postCpInfo, localPlayer, postCutoffRank, true);
         if (bufferTime.isOut && Setting_ShowOutIndicatorEver) {
             DrawBufferTime(99999, true, GetBufferTimeColor(99, true));
         } else if (bufferTime.isSafe && (Setting_ShowSafeIndicatorEver || (koFeedHook.KOsNumber == 0 && Setting_SafeIndicatorInNoKO))) {
@@ -196,13 +242,13 @@ namespace KoBufferUI {
         }
     }
 
-    BufferTime@ CalcBufferTime(const MLFeed::RaceDataProxy@ theHook, const MLFeed::KoDataProxy@ koFeedHook,
+    BufferTime@ CalcBufferTime_KO(const MLFeed::RaceDataProxy@ theHook, const MLFeed::KoDataProxy@ koFeedHook,
                         MLFeed::PlayerCpInfo@ preCpInfo, MLFeed::PlayerCpInfo@ postCpInfo,
                         MLFeed::PlayerCpInfo@ localPlayer,
                         uint postCutoffRank,
                         bool drawBufferTime = false
     ) {
-        if (localPlayer is null) return BufferTime(null, 0, 1, true, false, false, false, false);
+        if (localPlayer is null) return BufferTime(0, 1, true, false, false, false, false);
         auto localPlayerState = koFeedHook.GetPlayerState(localPlayer.name);
 
         bool localPlayerLives = localPlayerState is null || (!localPlayerState.isDNF && localPlayerState.isAlive);
@@ -210,7 +256,7 @@ namespace KoBufferUI {
         bool isDNF = localPlayerState !is null && localPlayerState.isDNF;
 
 
-        if (preCpInfo is null) return BufferTime(localPlayer, 99999, 99, false, true, false, localPlayerState.isAlive, localPlayerState.isDNF);
+        if (preCpInfo is null) return BufferTime(99999, 99, false, true, false, localPlayerState.isAlive, localPlayerState.isDNF);
 
         bool isOut = (int(localPlayer.raceRank) > koFeedHook.PlayersNb - koFeedHook.KOsNumber)
                 && preCpInfo.cpCount == int(theHook.CPsToFinish);
@@ -227,11 +273,11 @@ namespace KoBufferUI {
                 && !postCpAlive && localPlayerLives;
 
         if (isOut && drawBufferTime && Setting_ShowOutIndicatorEver) {
-            return BufferTime(localPlayer, 99999, 99, true, false, true, localPlayerState.isAlive, localPlayerState.isDNF);
+            return BufferTime(99999, 99, true, false, true, localPlayerState.isAlive, localPlayerState.isDNF);
         }
 
         if (isSafe && drawBufferTime && Setting_ShowSafeIndicatorEver) {
-            return BufferTime(localPlayer, 99999, 99, false, true, false, localPlayerState.isAlive, localPlayerState.isDNF);
+            return BufferTime(99999, 99, false, true, false, localPlayerState.isAlive, localPlayerState.isDNF);
         }
 
 
@@ -243,14 +289,14 @@ namespace KoBufferUI {
         else @targetCpInfo = preCpInfo; // otherwise, if at risk of elim
 
         if (targetCpInfo is null) {
-            return BufferTime(localPlayer, 99999, 99, false, localPlayerLives, !localPlayerLives, localPlayerState.isAlive, localPlayerState.isDNF);
+            return BufferTime(99999, 99, false, localPlayerLives, !localPlayerLives, localPlayerState.isAlive, localPlayerState.isDNF);
         }
 
         isBehind = localPlayer.raceRank > targetCpInfo.raceRank; // should never be ==
         uint cpDelta = Math::Abs(localPlayer.cpCount - targetCpInfo.cpCount);
 
         int msDelta = CalcMsDelta(WrapPlayerCpInfo(localPlayer), isBehind, WrapPlayerCpInfo(targetCpInfo));
-        return BufferTime(localPlayer, msDelta, cpDelta, isBehind, isSafe, isOut, isAlive, isDNF);
+        return BufferTime(msDelta, cpDelta, isBehind, isSafe, isOut, isAlive, isDNF);
     }
 
     int CalcMsDelta(CPAbstraction@ localPlayer, bool isBehind, CPAbstraction@ targetCpInfo) {
@@ -260,15 +306,23 @@ namespace KoBufferUI {
         auto aheadPlayer = isBehind ? targetCpInfo : localPlayer;
         auto behindPlayer = isBehind ? localPlayer : targetCpInfo;
         uint expectedExtraCps = 0;
+        // PlayerCpInfo includes zeroth cp time, but GhostInfo does not.
+        // is the zeroth cp in aheadPlayer's cp times? (i.e.: cpTimes[0] == 0)?
+        // if not, we need to offset access to `aheadPlayer.cpTimes` by -1 (i.e., cpTimes[2 -1] = 2nd CP time);
+        // we only use behindPlayer.lastCpTime, so don't need an offset for that.
+        int apOffs = (aheadPlayer.cpTimes.Length == 0 || aheadPlayer.cpTimes[0] > 0) ? -1 : 0;
         if (aheadPlayer.cpCount > behindPlayer.cpCount) {
-            expectedExtraCps = Math::Max(currRaceTime - behindPlayer.lastCpTime, aheadPlayer.cpTimes[behindPlayer.cpCount + 1] - aheadPlayer.cpTimes[behindPlayer.cpCount]);
-            msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount + 1] + expectedExtraCps;
+            expectedExtraCps = Math::Max(currRaceTime - behindPlayer.lastCpTime, aheadPlayer.cpTimes[behindPlayer.cpCount + 1 + apOffs] - aheadPlayer.cpTimes[behindPlayer.cpCount + apOffs]);
+            msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount + 1 + apOffs] + expectedExtraCps;
         } else if (aheadPlayer.cpCount < behindPlayer.cpCount) {
             // should never be true
             msDelta = 98765;
             warn("Ahead Player has fewer CPs than Behind Player!");
+#if DEV
+            NotifyError("Ahead Player has fewer CPs than Behind Player!");
+#endif
         } else {
-            msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount];
+            msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount + apOffs];
         }
         return msDelta;
     }
@@ -282,11 +336,7 @@ namespace KoBufferUI {
         bool isOut;
         bool isAlive;
         bool isDNF;
-        BufferTime(
-            MLFeed::PlayerCpInfo@ _localPlayer,
-            uint _msDelta, uint _cpDelta, bool _isBehind, bool _isSafe, bool _isOut, bool _isAlive, bool _isDNF
-        ) {
-            // @localPlayer = _localPlayer;
+        BufferTime(uint _msDelta, uint _cpDelta, bool _isBehind, bool _isSafe = false, bool _isOut = false, bool _isAlive = true, bool _isDNF = false) {
             msDelta = _msDelta;
             cpDelta = _cpDelta;
             isBehind = _isBehind;
@@ -482,7 +532,7 @@ namespace KoBufferUI {
                 while (clip.Step()) {
                     for (int i = clip.DisplayStart; i < clip.DisplayEnd; i++) {
                         auto player = sorted[i];
-                        auto bt = CalcBufferTime(theHook, koFeedHook, preCpInfo, postCpInfo, player, postCutoffRank);
+                        auto bt = CalcBufferTime_KO(theHook, koFeedHook, preCpInfo, postCpInfo, player, postCutoffRank);
                         auto pm = GetPlusMinusFor(bt.isBehind);
 
                         // columns

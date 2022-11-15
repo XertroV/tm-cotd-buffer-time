@@ -9,6 +9,13 @@ The aim of this plugin is to do basically the same thing as COTD Delta time.
 
 Also the font is monospaced for a nicer visual experience.
 
+todo:
+- wizard
+  - fonts
+  - COTD/KO settings
+  - TA/Campaign settings
+
+
 License: Public Domain
 
 Authors: XertroV

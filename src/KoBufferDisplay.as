@@ -119,15 +119,6 @@ namespace KoBufferUI {
     [Setting category="Buffer Time Display" name="Plus for behind, Minus for ahead?" description="If true, when behind the timer will show a time like '+1.024', and '-1.024' when ahead. This is the minimum delta between players based on prior CPs. When this setting is false, the + and - signs are inverted, which shows the amount of buffer the player has (positive buffer being the number of seconds you can lose without being in a KO position)."]
     bool Setting_SwapPlusMinus = true;
 
-    [Setting category="Buffer Time Display" name="Show SAFE indicator when elimination is imposible?" description="If true, when enough players DNF or disconnect, the timer will change to the SAFE indicator (99.999 green)."]
-    bool Setting_ShowSafeIndicatorEver = true;
-
-    [Setting category="Buffer Time Display" name="Show OUT indicator when elimination is inevitable?" description="If true, when you're guarenteed to be knocked out, the timer will change to the OUT indicator (99.999 red)."]
-    bool Setting_ShowOutIndicatorEver = true;
-
-    [Setting category="Buffer Time Display" name="Show SAFE indicator during No KO round?" description="If true, during the No KO round the timer will change to the SAFE indicator (99.999 green)."]
-    bool Setting_SafeIndicatorInNoKO = true;
-
     [Setting category="Buffer Time Display" name="Display Position" description="Origin: Top left. Values: Proportion of screen (range: 0-100%; default: (50, 87))" drag]
     vec2 Setting_BufferDisplayPosition = vec2(50, 87);
 
@@ -158,7 +149,7 @@ namespace KoBufferUI {
     }
 
     void RenderKoMenuMainInner() {
-        UI::Text("KO / COTD Options");
+        UI::Text("\\$bbb   KO / COTD Options");
         UI::Separator();
 
         if (UI::MenuItem("Show SAFE indicator in no-KO round?", "", Setting_SafeIndicatorInNoKO))
@@ -174,7 +165,24 @@ namespace KoBufferUI {
     }
 
     void RenderTaMenuMainInner() {
+        UI::Text("\\$bbb   Time Attack / Campaign Options");
+        UI::Separator();
 
+        if (UI::MenuItem("Show Vs. Best Ghost?", "", S_TA_VsBestGhost))
+            S_TA_VsBestGhost = !S_TA_VsBestGhost;
+
+        if (UI::MenuItem("Show Vs. PB?", "", S_TA_VsPB))
+            S_TA_VsPB = !S_TA_VsPB;
+
+        if (UI::MenuItem("Show Two Buf. Times?", "", S_TA_ShowTwoBufferTimes))
+            S_TA_ShowTwoBufferTimes = !S_TA_ShowTwoBufferTimes;
+
+        UI::Separator();
+
+        UI::Text("\\$bbb   Currently prioritizing: " + tostring(S_TA_PrioritizedType));
+        auto otherPriorityType = TaBufferTimeType((uint(S_TA_PrioritizedType) + 1 ) % 2);
+        if (UI::MenuItem("Change priority to " + tostring(otherPriorityType)))
+            S_TA_PrioritizedType = otherPriorityType;
     }
 
     void RenderUnknownMenuMainInner() {
@@ -210,24 +218,27 @@ namespace KoBufferUI {
 
     // show buffer in TA against personal best
     void Render_TA() {
+        auto crt = KoBuffer::GetCurrentRaceTime(GetApp());
+
         auto ghostData = MLFeed::GetGhostData();
         if (ghostData.NbGhosts == 0) return; // we need a ghost to get times from
         auto raceData = MLFeed::GetRaceData();
         auto playerName = KoBuffer::App_CurrPlayground_GameTerminal_GUIPlayerUserName;
-
         auto localPlayer = raceData.GetPlayer(playerName);
         if (localPlayer is null) return;
 
-        const MLFeed::GhostInfo@ bestGhost = ghostData.Ghosts[0];
+        if (!S_TA_VsBestGhost && !S_TA_VsPB) return;
+
+        const MLFeed::GhostInfo@ bestGhost = S_TA_VsBestGhost ? ghostData.Ghosts[0] : null;
         const MLFeed::GhostInfo@ pbGhost = null;
         for (uint i = 0; i < ghostData.NbGhosts; i++) {
             auto g = ghostData.Ghosts[i];
             if (g.Nickname == "?Personal best" || g.Nickname == playerName) {
-                if (pbGhost is null || pbGhost.Result_Time > g.Result_Time) {
+                if (S_TA_VsPB && (pbGhost is null || pbGhost.Result_Time > g.Result_Time)) {
                     @pbGhost = g;
                 }
             }
-            if (bestGhost.Result_Time > g.Result_Time) {
+            if (S_TA_VsBestGhost && bestGhost.Result_Time > g.Result_Time) {
                 @bestGhost = g;
             }
         }
@@ -235,21 +246,52 @@ namespace KoBufferUI {
         if (ta_playerTime is null) @ta_playerTime = WrapPlayerCpInfo(localPlayer);
         else ta_playerTime.UpdateFrom(localPlayer);
 
-        auto crt = KoBuffer::GetCurrentRaceTime(GetApp());
-
-        if (ta_bestGhost is null) @ta_bestGhost = WrapGhostInfo(bestGhost, crt);
-        else ta_bestGhost.UpdateFrom(bestGhost, crt);
+        if (S_TA_VsBestGhost) {
+            if (ta_bestGhost is null) @ta_bestGhost = WrapGhostInfo(bestGhost, crt);
+            else ta_bestGhost.UpdateFrom(bestGhost, crt);
+        } else {
+            @ta_bestGhost = null;
+        }
 
         // todo handle secondary timer for pb / choice between
-        if (ta_pbGhost is null) @ta_pbGhost = WrapGhostInfo(pbGhost, crt);
-        else ta_pbGhost.UpdateFrom(bestGhost, crt);
+        if (S_TA_VsPB) {
+            if (ta_pbGhost is null) @ta_pbGhost = WrapGhostInfo(pbGhost, crt);
+            else ta_pbGhost.UpdateFrom(pbGhost, crt);
+        } else {
+            @ta_pbGhost = null;
+        }
 
-        bool isBehind = ta_playerTime > ta_bestGhost;
+        auto priorityGhost =
+            ( S_TA_PrioritizedType == TaBufferTimeType::PersonalBest
+              && pbGhost !is null && ta_pbGhost !is null
+            ) ? ta_pbGhost : ta_bestGhost;
+        if (priorityGhost is null) {
+            @priorityGhost = ta_pbGhost !is null ? ta_pbGhost : ta_bestGhost;
+        }
+        if (priorityGhost is null) return;
 
-        // print("ta_playerTime: " + ta_playerTime.ToString() + ", ta_bestGhost: " + ta_bestGhost.ToString() + ", isBehind: " + tostring(isBehind));
-        auto msDelta = CalcMsDelta(ta_playerTime, isBehind, ta_bestGhost);
-        uint cpDelta = Math::Abs(ta_playerTime.cpCount - ta_bestGhost.cpCount);
+        auto secondaryGhost = priorityGhost == ta_pbGhost ? ta_bestGhost : ta_pbGhost;
+
+        bool showTwoTimes = S_TA_ShowTwoBufferTimes && priorityGhost != secondaryGhost && secondaryGhost !is null && secondaryGhost.cpCount > 0;
+        // if (showTwoTimes) trace('show two times!');
+        // else {
+        //     trace('S_TA_ShowTwoBufferTimes: ' + tostring(S_TA_ShowTwoBufferTimes));
+        //     trace('secondaryGhost: ' + secondaryGhost.ToString());
+        //     trace('priorityGhost != secondaryGhost: ' + tostring(priorityGhost != secondaryGhost));
+        // }
+        // priority ghost
+        bool isBehind = ta_playerTime > priorityGhost;
+        // print("ta_playerTime: " + ta_playerTime.ToString() + ", priorityGhost: " + priorityGhost.ToString() + ", isBehind: " + tostring(isBehind));
+        auto msDelta = CalcMsDelta(ta_playerTime, isBehind, priorityGhost);
+        uint cpDelta = Math::Abs(ta_playerTime.cpCount - priorityGhost.cpCount);
         DrawBufferTime(msDelta, isBehind, GetBufferTimeColor(cpDelta, isBehind));
+
+        if (showTwoTimes) {
+            isBehind = ta_playerTime > secondaryGhost;
+            msDelta = CalcMsDelta(ta_playerTime, isBehind, secondaryGhost);
+            cpDelta = Math::Abs(ta_playerTime.cpCount - secondaryGhost.cpCount);
+            DrawBufferTime(msDelta, isBehind, GetBufferTimeColor(cpDelta, isBehind), true);
+        }
     }
 
     void Render_KO() {
@@ -421,13 +463,27 @@ namespace KoBufferUI {
     int boldDisplayFont = nvg::LoadFont("fonts/MontserratMono-Bold.ttf", true, true);
     int boldItalicDisplayFont = nvg::LoadFont("fonts/MontserratMono-BoldItalic.ttf", true, true);
 
+    int oswaldBoldFont = nvg::LoadFont("fonts/OswaldMono-Bold.ttf", true, true);
+    int oswaldSemiBoldFont = nvg::LoadFont("fonts/OswaldMono-SemiBold.ttf", true, true);
+    int oswaldLightFont = nvg::LoadFont("fonts/OswaldMono-Light.ttf", true, true);
+    int oswaldExtraLightFont = nvg::LoadFont("fonts/OswaldMono-ExtraLight.ttf", true, true);
+    int oswaldMediumFont = nvg::LoadFont("fonts/OswaldMono-Medium.ttf", true, true);
+    int oswaldRegularFont = nvg::LoadFont("fonts/OswaldMono-Regular.ttf", true, true);
+
+
     enum FontChoice {
-        Medium = 0,
-        Medium_Italic,
-        SemiBold,
-        SemiBold_Italic,
-        Bold,
-        Bold_Italic
+        Montserrat_Medium = 0,
+        Montserrat_Medium_Italic,
+        Montserrat_SemiBold,
+        Montserrat_SemiBold_Italic,
+        Montserrat_Bold,
+        Montserrat_Bold_Italic,
+        Oswald_ExtraLight,
+        Oswald_Light,
+        Oswald_Regular,
+        Oswald_Medium,
+        Oswald_SemiBold,
+        Oswald_Bold,
     }
 
     array<int> fontChoiceToFont =
@@ -437,10 +493,16 @@ namespace KoBufferUI {
         , semiBoldItalicDisplayFont
         , boldDisplayFont
         , boldItalicDisplayFont
+        , oswaldExtraLightFont
+        , oswaldLightFont
+        , oswaldRegularFont
+        , oswaldMediumFont
+        , oswaldSemiBoldFont
+        , oswaldBoldFont
         };
 
     [Setting category="Buffer Time Display" name="Font Choice"]
-    FontChoice Setting_Font = FontChoice::Bold;
+    FontChoice Setting_Font = FontChoice::Montserrat_Bold;
 
     [Setting category="Buffer Time Display" name="Display Font Size" min="10" max="150"]
     float Setting_BufferFontSize = 60 * Draw::GetHeight() / 1440;
@@ -458,17 +520,24 @@ namespace KoBufferUI {
         return (isBehind ^^ Setting_SwapPlusMinus) ? "-" : "+";
     }
 
-    void DrawBufferTime(int msDelta, bool isBehind, vec4 bufColor) {
+    void DrawBufferTime(int msDelta, bool isBehind, vec4 bufColor, bool isSecondary = false) {
         msDelta = Math::Abs(msDelta);
         nvg::Reset();
         string toDraw = GetPlusMinusFor(isBehind) + MsToSeconds(msDelta);
         auto screen = vec2(Draw::GetWidth(), Draw::GetHeight());
         vec2 pos = (screen * Setting_BufferDisplayPosition / vec2(100, 100));// - (size / 2);
+        float fontSize = Setting_BufferFontSize;
+        float sw = Setting_StrokeWidth;
+        if (isSecondary) {
+            pos = CalcBufferTimeSecondaryPos(pos, fontSize);
+            fontSize /= 2;
+            sw /= 1.5;
+        }
 
         nvg::FontFace(fontChoiceToFont[uint(Setting_Font)]);
-        nvg::FontSize(Setting_BufferFontSize);
+        nvg::FontSize(fontSize);
         nvg::TextAlign(nvg::Align::Center | nvg::Align::Middle);
-        auto sizeWPad = nvg::TextBounds(toDraw.SubStr(0, toDraw.Length - 3) + "000") + vec2(20, 10);
+        auto sizeWPad = nvg::TextBounds(toDraw) + vec2(20, 10);
 
         if (Setting_DrawBufferTimeBG) {
             nvg::BeginPath();
@@ -480,7 +549,6 @@ namespace KoBufferUI {
 
         // "stroke"
         if (Setting_EnableStroke) {
-            float sw = Setting_StrokeWidth;
             float nCopies = 32; // this does not seem to be expensive
             nvg::FillColor(vec4(0,0,0, bufColor.w * Setting_StrokeAlpha));
             for (float i = 0; i < nCopies; i++) {
@@ -492,6 +560,11 @@ namespace KoBufferUI {
 
         nvg::FillColor(bufColor);
         nvg::Text(pos, toDraw);
+    }
+
+    vec2 CalcBufferTimeSecondaryPos(vec2 pos, float fontSize) {
+        vec2 offs = vec2(0, fontSize / 2. + 20) * (Setting_BufferDisplayPosition.y >= 50. ? 1 : -1);
+        return pos + offs;
     }
 
     [Setting color category="Buffer Time Display" name="Color: Ahead within 1 CP"]

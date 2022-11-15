@@ -8,7 +8,7 @@ void Main() {
     depMLFeed = true;
 #endif
     if (depMLFeed && depMLHook) {
-        print("cotd buffer time starting.");
+        print("buffer time starting.");
         startnew(KoBuffer::Main);
     } else {
         if (!depMLHook) {
@@ -55,6 +55,11 @@ void OnSettingsChanged() {
     }
 }
 
+/*
+    Utility functions
+*/
+
+//
 void NotifyDepError(const string &in msg) {
     warn(msg);
     UI::ShowNotification(Meta::ExecutingPlugin().Name + ": Dependency Error", msg, vec4(.9, .6, .1, .5), 15000);
@@ -71,4 +76,8 @@ void AddSimpleTooltip(const string &in msg) {
         UI::Text(msg);
         UI::EndTooltip();
     }
+}
+
+const string MsToSeconds(int t) {
+    return Text::Format("%.3f", float(t) / 1000.0);
 }

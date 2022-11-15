@@ -140,7 +140,8 @@ namespace KoBufferUI {
             || (S_ShowBufferTimeInTA && KoBuffer::IsGameModeTA)
             ;
         if (!isShowing) return;
-        if (UI::BeginMenu("\\$faa\\$s" + menuIcon + "\\$z " + Meta::ExecutingPlugin().Name)) {
+        string shortcut = Setting_ShortcutKeyEnabled ? "\\$bbb (" + tostring(Setting_ShortcutKey) + ")" : "";
+        if (UI::BeginMenu("\\$faa\\$s" + menuIcon + "\\$z " + Meta::ExecutingPlugin().Name + shortcut)) {
             if (KoBuffer::IsGameModeCotdKO) RenderKoMenuMainInner();
             else if (KoBuffer::IsGameModeTA) RenderTaMenuMainInner();
             else RenderUnknownMenuMainInner();

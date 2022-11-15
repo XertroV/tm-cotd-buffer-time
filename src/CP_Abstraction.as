@@ -44,6 +44,7 @@ class WrapGhostInfo : CPAbstraction, CPAbstractionOpCmp {
     private const MLFeed::GhostInfo@ _inner;
     int innerResultTime = -1;
     array<uint> giCheckpoints;
+    string ghostName;
     int currRaceTime;
     private int _cpCount = 0;
     private int _lastCpTime = 0;
@@ -55,6 +56,7 @@ class WrapGhostInfo : CPAbstraction, CPAbstractionOpCmp {
         @_inner = ghostInfo;
         innerResultTime = ghostInfo.Result_Time;
         giCheckpoints = ghostInfo.Checkpoints;
+        ghostName = ghostInfo.Nickname;
 
         for (uint i = 0; i < giCheckpoints.Length; i++) {
             if (crt > int(giCheckpoints[i])) _cpCount++;
@@ -86,6 +88,7 @@ class WrapGhostInfo : CPAbstraction, CPAbstractionOpCmp {
                 @_inner = ghostInfo;
                 giCheckpoints = ghostInfo.Checkpoints;
                 innerResultTime = ghostInfo.Result_Time;
+                ghostName = ghostInfo.Nickname;
             }
         }
         currRaceTime = crt;

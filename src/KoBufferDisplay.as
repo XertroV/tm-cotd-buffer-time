@@ -15,8 +15,8 @@ namespace KoBuffer {
     void InitCoro() {
         dev_trace("KoBuffer::InitCoro");
         startnew(MainCoro);
-        if (KoBufferUI::Setting_BufferFontSize < 0.1) {
-            KoBufferUI::Setting_BufferFontSize = 60 * Draw::GetHeight() / 1440;
+        if (Setting_BufferFontSize < 0.1) {
+            Setting_BufferFontSize = 60 * Draw::GetHeight() / 1440;
         }
     }
 
@@ -53,11 +53,15 @@ namespace KoBuffer {
 
     bool get_IsGameModeTA() {
         return lastGM == "TM_TimeAttack_Online"
-            || lastGM == "TM_TimeAttackDaily_Online"
+            || (S_TA_ShowDuringCotdQuali && lastGM == "TM_TimeAttackDaily_Online")
             || lastGM == "TM_TimeAttack"
             || lastGM == "TM_TimeAttack_Debug"
             || lastGM == "TM_Campaign_Local"
             ;
+    }
+
+    bool get_IsGameModeCotdQuali() {
+        return lastGM == "TM_TimeAttackDaily_Online";
     }
 
     CSmPlayer@ get_App_CurrPlayground_GameTerminal_GUIPlayer() {
@@ -72,6 +76,16 @@ namespace KoBuffer {
         auto GUIPlayer = App_CurrPlayground_GameTerminal_GUIPlayer;
         if (GUIPlayer is null) return "";
         return GUIPlayer.User.Name;
+    }
+
+
+
+    string Get_GameTerminal_ControlledPlayer_UserName(CGameCtnApp@ app) {
+        try {
+            return app.CurrentPlayground.GameTerminals[0].ControlledPlayer.User.Name;
+        } catch {
+            return "";
+        }
     }
 
     string Get_GameTerminal_Player_UserName(CGameCtnApp@ app) {
@@ -99,23 +113,52 @@ namespace KoBuffer {
         return cast<CSmPlayer>(GameTerminal.ControlledPlayer);
     }
 
-    CSmScriptPlayer@ get_ControlledPlayer_ScriptAPI() {
-        auto ControlledPlayer = App_CurrPlayground_GameTerminal_ControlledPlayer;
-        if (ControlledPlayer is null) return null;
-        return cast<CSmScriptPlayer>(ControlledPlayer.ScriptAPI);
+    CSmScriptPlayer@ Get_ControlledPlayer_ScriptAPI(CGameCtnApp@ app) {
+        try {
+            auto ControlledPlayer = cast<CSmPlayer>(app.CurrentPlayground.GameTerminals[0].ControlledPlayer);
+            if (ControlledPlayer is null) return null;
+            return cast<CSmScriptPlayer>(ControlledPlayer.ScriptAPI);
+        } catch {
+            return null;
+        }
+    }
+
+    CSmScriptPlayer@ Get_GUIPlayer_ScriptAPI(CGameCtnApp@ app) {
+        try {
+            auto GUIPlayer = cast<CSmPlayer>(app.CurrentPlayground.GameTerminals[0].GUIPlayer);
+            if (GUIPlayer is null) return null;
+            return cast<CSmScriptPlayer>(GUIPlayer.ScriptAPI);
+        } catch {
+            return null;
+        }
+    }
+
+    int Get_Player_StartTime(CGameCtnApp@ app) {
+        try {
+            return Get_GUIPlayer_ScriptAPI(app).StartTime;
+        } catch {}
+        try {
+            return Get_ControlledPlayer_ScriptAPI(app).StartTime;
+        } catch {}
+        return -1;
     }
 
     int GetCurrentRaceTime(CGameCtnApp@ app) {
         if (app.Network.PlaygroundClientScriptAPI is null) return 0;
         int gameTime = app.Network.PlaygroundClientScriptAPI.GameTime;
-        int startTime = -1;
-        if (GUIPlayer_ScriptAPI !is null)
-            startTime = GUIPlayer_ScriptAPI.StartTime;
-        else if (ControlledPlayer_ScriptAPI !is null)
-            startTime = ControlledPlayer_ScriptAPI.StartTime;
+        int startTime = Get_Player_StartTime(GetApp());
         if (startTime < 0) return 0;
         return gameTime - startTime;
         // return Math::Abs(gameTime - startTime);  // when formatting via Time::Format, negative ints don't work.
+    }
+
+    // a hacky way to tell if the interface is hidden
+    bool IsInterfaceHidden(CGameCtnApp@ app) {
+        try {
+            return Get_ControlledPlayer_ScriptAPI(app).CurrentRaceTime != GetCurrentRaceTime(app);
+        } catch {
+            return false;
+        }
     }
 
     CGamePlaygroundUIConfig::EUISequence GetUiSequence(CGameCtnApp@ app) {
@@ -129,18 +172,6 @@ namespace KoBuffer {
 
 namespace KoBufferUI {
 
-    [Setting category="Buffer Time Display" name="Show Preview?" description="Shows a preview (works anywhere)"]
-    bool Setting_ShowPreview = false;
-
-    [Setting category="Buffer Time Display" name="Buffer Time Visible during KO matches?" description="Whether the timer shows up at all or not during KO matches. If unchecked, the plugin will not draw anything to the screen. This is the same setting as checking/unchecking this plugin in the Scripts menu."]
-    bool g_koBufferUIVisible = true;
-
-    [Setting category="Buffer Time Display" name="Plus for behind, Minus for ahead?" description="If true, when behind the timer will show a time like '+1.024', and '-1.024' when ahead. This is the minimum delta between players based on prior CPs. When this setting is false, the + and - signs are inverted, which shows the amount of buffer the player has (positive buffer being the number of seconds you can lose without being in a KO position)."]
-    bool Setting_SwapPlusMinus = true;
-
-    [Setting category="Buffer Time Display" name="Display Position" description="Origin: Top left. Values: Proportion of screen (range: 0-100%; default: (50, 87))" drag]
-    vec2 Setting_BufferDisplayPosition = vec2(50, 87);
-
     // const string menuIcon = Icons::ArrowsH;
     const string menuIcon = " Δt";
 
@@ -153,7 +184,7 @@ namespace KoBufferUI {
     }
 
     void RenderMenuMain() {
-        if (!g_koBufferUIVisible) return;
+        if (!g_koBufferUIVisible || S_HideIncrediblyUsefulMenuBarItem) return;
         bool isShowing = false
             || (S_ShowBufferTimeInKO && KoBuffer::IsGameModeCotdKO)
             || (S_ShowBufferTimeInTA && KoBuffer::IsGameModeTA)
@@ -170,6 +201,12 @@ namespace KoBufferUI {
 
     void RenderKoMenuMainInner() {
         UI::Text("\\$bbb   KO / COTD Options");
+        if (UI::BeginMenu("Disable Buffer Time during KO")) {
+                bool disableNow = UI::MenuItem("Disable Now");
+                AddSimpleTooltip("You will need to re-enable it for KO in 'Global' settings.");
+                if (disableNow) S_ShowBufferTimeInKO = false;
+            UI::EndMenu();
+        }
         UI::Separator();
 
         if (UI::MenuItem("Show SAFE indicator in no-KO round?", "", Setting_SafeIndicatorInNoKO))
@@ -185,13 +222,31 @@ namespace KoBufferUI {
     }
 
     void RenderTaMenuMainInner() {
-        UI::Text("\\$bbb   Time Attack / Campaign Options");
+        UI::Text("\\$bbb  Time Attack / Campaign Options");
+        if (UI::BeginMenu("Disable Buffer Time during TA")) {
+                if (KoBuffer::IsGameModeCotdQuali) {
+                    bool disableCotdQuali = UI::MenuItem("Disable for COTD Quali");
+                    AddSimpleTooltip("You will need to re-enable it for COTD Quali in 'TA / Campaign' settings.");
+                    if (disableCotdQuali) S_TA_ShowDuringCotdQuali = false;
+                }
+                bool disableNow = UI::MenuItem("Disable Now");
+                AddSimpleTooltip("You will need to re-enable it for TA in 'Global' settings.");
+                if (disableNow) S_ShowBufferTimeInTA = false;
+            UI::EndMenu();
+        }
+        UI::Separator();
+        UI::Text("\\$bbb  Current Ghosts:");
+        UI::Text("\\$bbb  Priority: " + (priorityGhost is null ? "null" : priorityGhost.ghostName));
+        UI::Text("\\$bbb  Secondary: " + (secondaryGhost is null ? "null" : secondaryGhost.ghostName));
         UI::Separator();
 
         if (UI::MenuItem("Show Vs. Best Ghost?", "", S_TA_VsBestGhost))
             S_TA_VsBestGhost = !S_TA_VsBestGhost;
 
-        if (UI::MenuItem("Show Vs. PB?", "", S_TA_VsPB))
+        if (UI::MenuItem("Show Vs. Best Time?", "", S_TA_VsBestRecentTime))
+            S_TA_VsBestRecentTime = !S_TA_VsBestRecentTime;
+
+        if (UI::MenuItem("Include PB in Best Time?", "", S_TA_VsPB))
             S_TA_VsPB = !S_TA_VsPB;
 
         if (UI::MenuItem("Show Two Buf. Times?", "", S_TA_ShowTwoBufferTimes))
@@ -199,10 +254,20 @@ namespace KoBufferUI {
 
         UI::Separator();
 
-        UI::Text("\\$bbb   Currently prioritizing: " + tostring(S_TA_PrioritizedType));
-        auto otherPriorityType = TaBufferTimeType((uint(S_TA_PrioritizedType) + 1 ) % 2);
-        if (UI::MenuItem("Change priority to " + tostring(otherPriorityType)))
-            S_TA_PrioritizedType = otherPriorityType;
+        if (UI::BeginMenu("Proritize: \\$bbb("+tostring(S_TA_PrioritizedType)+")")) {
+            for (uint i = 0; i < 2; i++) {
+                TaBufferTimeType type = TaBufferTimeType(i);
+                string name = tostring(type);
+                if (UI::MenuItem(name, "", S_TA_PrioritizedType == type)) {
+                    S_TA_PrioritizedType = type;
+                }
+            }
+            UI::EndMenu();
+        }
+        // UI::Text("\\$bbb   Currently prioritizing: " + tostring(S_TA_PrioritizedType));
+        // auto otherPriorityType = TaBufferTimeType((uint(S_TA_PrioritizedType) + 1 ) % 2);
+        // if (UI::MenuItem("Change priority to " + tostring(otherPriorityType)))
+        //     S_TA_PrioritizedType = otherPriorityType;
     }
 
     void RenderUnknownMenuMainInner() {
@@ -210,19 +275,28 @@ namespace KoBufferUI {
         UI::TextWrapped("You should never see this. Sorry.\nPlease submit a bug report including at least the game mode and your settings.");
     }
 
-    void ShowPreview() {
+    float _preview_secondaryTimerTime = 0;
+    float _preview_lastTime = 0;
+
+    void ShowPreview(bool isSecondary = false) {
         int time = int(Time::Now);
+        float secDelta = time - _preview_lastTime;
+        _preview_lastTime = time;
+        if (time % 2000 > 500) _preview_secondaryTimerTime += secDelta;
+        time = isSecondary ? _preview_secondaryTimerTime : time;
         int msOffset = (time % 2000) - 1000;
-        int cpOffset = Math::Abs((time % 2000) / 400 - 2);
+        int cpOffset = Math::Abs((msOffset + 1000) / 400 - 2);
         bool isBehind = msOffset < 0;
         msOffset = Math::Abs(msOffset);
-        DrawBufferTime(msOffset, isBehind, GetBufferTimeColor(cpOffset, isBehind));
+        DrawBufferTime(msOffset, isBehind, GetBufferTimeColor(cpOffset, isBehind), isSecondary);
     }
 
     CGamePlaygroundUIConfig::EUISequence currSeq = CGamePlaygroundUIConfig::EUISequence::None;
     void Render() {
         if (Setting_ShowPreview) {
             ShowPreview();
+            if (Setting_ShowSecondaryPreview)
+                ShowPreview(true);
             return;
         }
         currSeq = KoBuffer::GetUiSequence(GetApp());
@@ -231,6 +305,7 @@ namespace KoBufferUI {
             && currSeq != CGamePlaygroundUIConfig::EUISequence::EndRound
             ) return;
         if (!g_koBufferUIVisible) return;
+        if (S_ShowOnlyWhenInterfaceHidden && !KoBuffer::IsInterfaceHidden(GetApp())) return;
 
         if (S_ShowBufferTimeInKO && KoBuffer::IsGameModeCotdKO)
             Render_KO();
@@ -241,6 +316,8 @@ namespace KoBufferUI {
     WrapPlayerCpInfo@ ta_playerTime;
     WrapGhostInfo@ ta_bestGhost;
     WrapGhostInfo@ ta_pbGhost;
+    WrapGhostInfo@ priorityGhost;
+    WrapGhostInfo@ secondaryGhost;
 
     // show buffer in TA against personal best
     void Render_TA() {
@@ -251,12 +328,14 @@ namespace KoBufferUI {
         if (ghostData.NbGhosts == 0) return; // we need a ghost to get times from
         auto raceData = MLFeed::GetRaceData();
         auto playerName = KoBuffer::Get_GameTerminal_Player_UserName(GetApp());
+        auto physicalPlayersName = KoBuffer::Get_GameTerminal_ControlledPlayer_UserName(GetApp());
+        auto isSpectating = playerName != physicalPlayersName;
+        if (S_TA_HideWhenSpectating && isSpectating) return;
+        // trace(tostring(isSpectating));
         auto localPlayer = raceData.GetPlayer(playerName);
         if (localPlayer is null) return;
 
         if (!S_TA_VsBestGhost && !S_TA_VsPB) return;
-
-        trace('here');
 
         bool updateGhosts = currSeq == CGamePlaygroundUIConfig::EUISequence::Playing;
         const MLFeed::GhostInfo@ bestGhost = (updateGhosts && S_TA_VsBestGhost) ? ghostData.Ghosts[0] : null;
@@ -264,11 +343,14 @@ namespace KoBufferUI {
         if (updateGhosts) {
             for (uint i = 0; i < ghostData.NbGhosts; i++) {
                 auto g = ghostData.Ghosts[i];
-                if ((g.Nickname == "?Personal best" || g.Nickname == playerName)) {
-                    if (S_TA_VsPB && (pbGhost is null || pbGhost.Result_Time > g.Result_Time)) {
-                        @pbGhost = g;
-                    }
+
+                bool checkGhostBestTime =
+                    (S_TA_VsBestRecentTime && g.Nickname == playerName)
+                    || (S_TA_VsPB && g.Nickname.EndsWith("Personal best"));
+                if (checkGhostBestTime && (pbGhost is null || pbGhost.Result_Time > g.Result_Time)) {
+                    @pbGhost = g;
                 }
+
                 if (S_TA_VsBestGhost && bestGhost.Result_Time > g.Result_Time) {
                     @bestGhost = g;
                 }
@@ -292,19 +374,18 @@ namespace KoBufferUI {
             @ta_pbGhost = null;
         }
 
-        auto priorityGhost =
-            ( S_TA_PrioritizedType == TaBufferTimeType::PersonalBest
+        @priorityGhost =
+            ( S_TA_PrioritizedType == TaBufferTimeType::YourBestTime
               && ta_pbGhost !is null
             ) ? ta_pbGhost : ta_bestGhost;
         if (priorityGhost is null) {
             @priorityGhost = ta_pbGhost !is null ? ta_pbGhost : ta_bestGhost;
         }
         if (priorityGhost is null) {
-            trace('priority ghost is null');
             return;
         }
 
-        auto secondaryGhost = priorityGhost == ta_pbGhost ? ta_bestGhost : ta_pbGhost;
+        @secondaryGhost = priorityGhost == ta_pbGhost ? ta_bestGhost : ta_pbGhost;
 
         bool showTwoTimes = S_TA_ShowTwoBufferTimes && secondaryGhost !is null && priorityGhost != secondaryGhost && secondaryGhost.cpCount > 0;
         // if (showTwoTimes) trace('show two times!');
@@ -535,20 +616,6 @@ namespace KoBufferUI {
         , oswaldBoldFont
         };
 
-    [Setting category="Buffer Time Display" name="Font Choice"]
-    FontChoice Setting_Font = FontChoice::Montserrat_Bold;
-
-    [Setting category="Buffer Time Display" name="Display Font Size" min="10" max="150"]
-    float Setting_BufferFontSize = 60 * Draw::GetHeight() / 1440;
-
-    [Setting category="Buffer Time Display" name="Enable Stroke"]
-    bool Setting_EnableStroke = true;
-
-    [Setting category="Buffer Time Display" name="Stroke Width" min="1.0" max="20.0"]
-    float Setting_StrokeWidth = 5.0;
-
-    [Setting category="Buffer Time Display" name="Stroke Alpha" description="FYI it's not really alpha -- but it's an approximation; not perfect." min="0.0" max="1.0"]
-    float Setting_StrokeAlpha = 1.0;
 
     string GetPlusMinusFor(bool isBehind) {
         return (isBehind ^^ Setting_SwapPlusMinus) ? "-" : "+";
@@ -564,14 +631,14 @@ namespace KoBufferUI {
         float sw = Setting_StrokeWidth;
         if (isSecondary) {
             pos = CalcBufferTimeSecondaryPos(pos, fontSize);
-            fontSize /= 2;
-            sw /= 1.5;
+            fontSize *= S_SecondaryTimerScale;
+            sw *= Math::Sqrt(S_SecondaryTimerScale);
         }
 
         nvg::FontFace(fontChoiceToFont[uint(Setting_Font)]);
         nvg::FontSize(fontSize);
         nvg::TextAlign(nvg::Align::Center | nvg::Align::Middle);
-        auto sizeWPad = nvg::TextBounds(toDraw) + vec2(20, 10);
+        auto sizeWPad = nvg::TextBounds(toDraw.SubStr(0, toDraw.Length - 3) + "000") + vec2(20, 10);
 
         if (Setting_DrawBufferTimeBG) {
             nvg::BeginPath();
@@ -597,37 +664,16 @@ namespace KoBufferUI {
     }
 
     vec2 CalcBufferTimeSecondaryPos(vec2 pos, float fontSize) {
-        vec2 offs = vec2(0, fontSize / 2. + 20) * (Setting_BufferDisplayPosition.y >= 50. ? 1 : -1);
+        vec2 offs = vec2(0, fontSize * (1. + S_SecondaryTimerScale) / 2. + 10 - .25) * (Setting_BufferDisplayPosition.y >= 50. ? 1 : -1);
         return pos + offs;
     }
 
-    [Setting color category="Buffer Time Display" name="Color: Ahead within 1 CP"]
-    vec4 Col_AheadDefinite = vec4(0.000f, 0.788f, 0.103f, 1.000f);
-    [Setting color category="Buffer Time Display" name="Color: Behind within 1 CP"]
-    vec4 Col_BehindDefinite = vec4(0.942f, 0.502f, 0.000f, 1.000f);
-
-    [Setting color category="Buffer Time Display" name="Color: Far Ahead"]
-    vec4 Col_FarAhead = vec4(0.008f, 1.000f, 0.000f, 1.000f);
-    [Setting color category="Buffer Time Display" name="Color: Far Behind"]
-    vec4 Col_FarBehind = vec4(0.961f, 0.007f, 0.007f, 1.000f);
-
-    [Setting category="Buffer Time Display" name="Enable Buffer Time BG Color" description="Add a ((semi-)transparent) background box to the displayed Buffer Time."]
-    bool Setting_DrawBufferTimeBG = true;
-
-    [Setting color category="Buffer Time Display" name="Buffer Time BG Color" description="Background color of the timer if the above is enabled. (Transparency recommended.)"]
-    vec4 Setting_BufferTimeBGColor = vec4(0.000f, 0.000f, 0.000f, 0.631f);
 
     vec4 GetBufferTimeColor(uint cpDelta, bool isBehind) {
         return cpDelta < 2
             ? (isBehind ? Col_BehindDefinite : Col_AheadDefinite)
             : (isBehind ? Col_FarBehind : Col_FarAhead);
     }
-
-    [Setting category="Buffer Time Display" name="Hotkey Enabled?" description="Enable a hotkey that toggles displaying Buffer Time."]
-    bool Setting_ShortcutKeyEnabled = false;
-
-    [Setting category="Buffer Time Display" name="Hotkey Choice" description="Toggles displaying Buffer Time if the above is enabled."]
-    VirtualKey Setting_ShortcutKey = VirtualKey::F5;
 
     string get_MenuShortcutStr() {
         if (Setting_ShortcutKeyEnabled)
@@ -645,9 +691,6 @@ namespace KoBufferUI {
     }
 
     /* DEBUG WINDOW: SHOW ALL */
-
-    [Setting category="Extra/Debug" name="Show All Players' Deltas" description="When checked a window will appear (if the interface is on) that shows all deltas for the current game (regardless of whether it's KO or not)."]
-    bool S_ShowAllInfoDebug = false;
 
     void RenderInterface() {
         if (!(S_ShowAllInfoDebug)) return;

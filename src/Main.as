@@ -38,6 +38,12 @@ void RenderMenu() {
     KoBufferUI::RenderMenu();
 }
 
+/** Render function called every frame intended only for menu items in the main menu of the `UI`.
+*/
+void RenderMenuMain() {
+    KoBufferUI::RenderMenuMain();
+}
+
 UI::InputBlocking OnKeyPress(bool down, VirtualKey key) {
     return KoBufferUI::OnKeyPress(down, key);
 }
@@ -57,4 +63,12 @@ void NotifyDepError(const string &in msg) {
 void NotifyError(const string &in msg) {
     warn(msg);
     UI::ShowNotification(Meta::ExecutingPlugin().Name + ": Error", msg, vec4(.9, .6, .1, .5), 15000);
+}
+
+void AddSimpleTooltip(const string &in msg) {
+    if (UI::IsItemHovered()) {
+        UI::BeginTooltip();
+        UI::Text(msg);
+        UI::EndTooltip();
+    }
 }

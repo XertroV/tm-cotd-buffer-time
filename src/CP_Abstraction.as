@@ -47,9 +47,10 @@ class WrapGhostInfo : CPAbstraction, CPAbstractionOpCmp {
     int _lastCpTime = 0;
     array<int> _cpTimes;
     WrapGhostInfo(const MLFeed::GhostInfo@ ghostInfo, int crt) {
-        @_inner = ghostInfo;
         currRaceTime = crt;
         _cpTimes.InsertLast(0);
+        if (ghostInfo is null) return;
+        @_inner = ghostInfo;
         for (uint i = 0; i < ghostInfo.Checkpoints.Length; i++) {
             if (crt > ghostInfo.Checkpoints[i]) _cpCount++;
             else break;

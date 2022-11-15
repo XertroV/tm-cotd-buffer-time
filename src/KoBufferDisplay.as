@@ -142,6 +142,46 @@ namespace KoBufferUI {
         }
     }
 
+    void RenderMenuMain() {
+        if (!g_koBufferUIVisible) return;
+        bool isShowing = false
+            || (S_ShowBufferTimeInKO && KoBuffer::IsGameModeCotdKO)
+            || (S_ShowBufferTimeInTA && KoBuffer::IsGameModeTA)
+            ;
+        if (!isShowing) return;
+        if (UI::BeginMenu("\\$faa\\$s" + menuIcon + "\\$z " + Meta::ExecutingPlugin().Name)) {
+            if (KoBuffer::IsGameModeCotdKO) RenderKoMenuMainInner();
+            else if (KoBuffer::IsGameModeTA) RenderTaMenuMainInner();
+            else RenderUnknownMenuMainInner();
+            UI::EndMenu();
+        }
+    }
+
+    void RenderKoMenuMainInner() {
+        UI::Text("KO / COTD Options");
+        UI::Separator();
+
+        if (UI::MenuItem("Show SAFE indicator in no-KO round?", "", Setting_SafeIndicatorInNoKO))
+            Setting_SafeIndicatorInNoKO = !Setting_SafeIndicatorInNoKO;
+
+        bool clickedSafe = UI::MenuItem("Show SAFE indicator when elimination impossible?", "", Setting_ShowSafeIndicatorEver);
+        AddSimpleTooltip("Note: sometimes there is no valid player to compare against, and green 99.999 will show anyway.");
+        if (clickedSafe)
+            Setting_ShowSafeIndicatorEver = !Setting_ShowSafeIndicatorEver;
+
+        if (UI::MenuItem("Show OUT indicator?", "", Setting_ShowOutIndicatorEver))
+            Setting_ShowOutIndicatorEver = !Setting_ShowOutIndicatorEver;
+    }
+
+    void RenderTaMenuMainInner() {
+
+    }
+
+    void RenderUnknownMenuMainInner() {
+        UI::Text("\\$f84 Unknown Game Mode! " + KoBuffer::lastGM);
+        UI::TextWrapped("You should never see this. Sorry.\nPlease submit a bug report including at least the game mode and your settings.");
+    }
+
     void ShowPreview() {
         int time = int(Time::Now);
         int msOffset = (time % 2000) - 1000;
@@ -174,13 +214,15 @@ namespace KoBufferUI {
         if (ghostData.NbGhosts == 0) return; // we need a ghost to get times from
         auto raceData = MLFeed::GetRaceData();
         auto playerName = KoBuffer::App_CurrPlayground_GameTerminal_GUIPlayerUserName;
+
         auto localPlayer = raceData.GetPlayer(playerName);
-        auto crt = KoBuffer::GetCurrentRaceTime(GetApp());
+        if (localPlayer is null) return;
+
         const MLFeed::GhostInfo@ bestGhost = ghostData.Ghosts[0];
         const MLFeed::GhostInfo@ pbGhost = null;
         for (uint i = 0; i < ghostData.NbGhosts; i++) {
             auto g = ghostData.Ghosts[i];
-            if (g.Nickname == "?Personal Best" || g.Nickname == playerName) {
+            if (g.Nickname == "?Personal best" || g.Nickname == playerName) {
                 if (pbGhost is null || pbGhost.Result_Time > g.Result_Time) {
                     @pbGhost = g;
                 }
@@ -192,6 +234,8 @@ namespace KoBufferUI {
 
         if (ta_playerTime is null) @ta_playerTime = WrapPlayerCpInfo(localPlayer);
         else ta_playerTime.UpdateFrom(localPlayer);
+
+        auto crt = KoBuffer::GetCurrentRaceTime(GetApp());
 
         if (ta_bestGhost is null) @ta_bestGhost = WrapGhostInfo(bestGhost, crt);
         else ta_bestGhost.UpdateFrom(bestGhost, crt);

@@ -74,6 +74,17 @@ namespace KoBuffer {
         return GUIPlayer.User.Name;
     }
 
+    string Get_GameTerminal_Player_UserName(CGameCtnApp@ app) {
+        try {
+            return app.CurrentPlayground.GameTerminals[0].GUIPlayer.User.Name;
+        } catch {}
+        try {
+            return app.CurrentPlayground.GameTerminals[0].ControlledPlayer.User.Name;
+        } catch {
+            return "";
+        }
+    }
+
     CSmScriptPlayer@ get_GUIPlayer_ScriptAPI() {
         auto GUIPlayer = App_CurrPlayground_GameTerminal_GUIPlayer;
         if (GUIPlayer is null) return null;
@@ -105,6 +116,14 @@ namespace KoBuffer {
         if (startTime < 0) return 0;
         return gameTime - startTime;
         // return Math::Abs(gameTime - startTime);  // when formatting via Time::Format, negative ints don't work.
+    }
+
+    CGamePlaygroundUIConfig::EUISequence GetUiSequence(CGameCtnApp@ app) {
+        try {
+            return app.Network.ClientManiaAppPlayground.UI.UISequence;
+        } catch {
+            return CGamePlaygroundUIConfig::EUISequence::None;
+        }
     }
 }
 
@@ -200,11 +219,17 @@ namespace KoBufferUI {
         DrawBufferTime(msOffset, isBehind, GetBufferTimeColor(cpOffset, isBehind));
     }
 
+    CGamePlaygroundUIConfig::EUISequence currSeq = CGamePlaygroundUIConfig::EUISequence::None;
     void Render() {
         if (Setting_ShowPreview) {
             ShowPreview();
             return;
         }
+        currSeq = KoBuffer::GetUiSequence(GetApp());
+        if (currSeq != CGamePlaygroundUIConfig::EUISequence::Playing
+            && currSeq != CGamePlaygroundUIConfig::EUISequence::Finish
+            && currSeq != CGamePlaygroundUIConfig::EUISequence::EndRound
+            ) return;
         if (!g_koBufferUIVisible) return;
 
         if (S_ShowBufferTimeInKO && KoBuffer::IsGameModeCotdKO)
@@ -219,28 +244,34 @@ namespace KoBufferUI {
 
     // show buffer in TA against personal best
     void Render_TA() {
+        // trace('1');
         auto crt = KoBuffer::GetCurrentRaceTime(GetApp());
 
         auto ghostData = MLFeed::GetGhostData();
         if (ghostData.NbGhosts == 0) return; // we need a ghost to get times from
         auto raceData = MLFeed::GetRaceData();
-        auto playerName = KoBuffer::App_CurrPlayground_GameTerminal_GUIPlayerUserName;
+        auto playerName = KoBuffer::Get_GameTerminal_Player_UserName(GetApp());
         auto localPlayer = raceData.GetPlayer(playerName);
         if (localPlayer is null) return;
 
         if (!S_TA_VsBestGhost && !S_TA_VsPB) return;
 
-        const MLFeed::GhostInfo@ bestGhost = S_TA_VsBestGhost ? ghostData.Ghosts[0] : null;
+        trace('here');
+
+        bool updateGhosts = currSeq == CGamePlaygroundUIConfig::EUISequence::Playing;
+        const MLFeed::GhostInfo@ bestGhost = (updateGhosts && S_TA_VsBestGhost) ? ghostData.Ghosts[0] : null;
         const MLFeed::GhostInfo@ pbGhost = null;
-        for (uint i = 0; i < ghostData.NbGhosts; i++) {
-            auto g = ghostData.Ghosts[i];
-            if (g.Nickname == "?Personal best" || g.Nickname == playerName) {
-                if (S_TA_VsPB && (pbGhost is null || pbGhost.Result_Time > g.Result_Time)) {
-                    @pbGhost = g;
+        if (updateGhosts) {
+            for (uint i = 0; i < ghostData.NbGhosts; i++) {
+                auto g = ghostData.Ghosts[i];
+                if ((g.Nickname == "?Personal best" || g.Nickname == playerName)) {
+                    if (S_TA_VsPB && (pbGhost is null || pbGhost.Result_Time > g.Result_Time)) {
+                        @pbGhost = g;
+                    }
                 }
-            }
-            if (S_TA_VsBestGhost && bestGhost.Result_Time > g.Result_Time) {
-                @bestGhost = g;
+                if (S_TA_VsBestGhost && bestGhost.Result_Time > g.Result_Time) {
+                    @bestGhost = g;
+                }
             }
         }
 
@@ -254,7 +285,6 @@ namespace KoBufferUI {
             @ta_bestGhost = null;
         }
 
-        // todo handle secondary timer for pb / choice between
         if (S_TA_VsPB) {
             if (ta_pbGhost is null) @ta_pbGhost = WrapGhostInfo(pbGhost, crt);
             else ta_pbGhost.UpdateFrom(pbGhost, crt);
@@ -264,16 +294,19 @@ namespace KoBufferUI {
 
         auto priorityGhost =
             ( S_TA_PrioritizedType == TaBufferTimeType::PersonalBest
-              && pbGhost !is null && ta_pbGhost !is null
+              && ta_pbGhost !is null
             ) ? ta_pbGhost : ta_bestGhost;
         if (priorityGhost is null) {
             @priorityGhost = ta_pbGhost !is null ? ta_pbGhost : ta_bestGhost;
         }
-        if (priorityGhost is null) return;
+        if (priorityGhost is null) {
+            trace('priority ghost is null');
+            return;
+        }
 
         auto secondaryGhost = priorityGhost == ta_pbGhost ? ta_bestGhost : ta_pbGhost;
 
-        bool showTwoTimes = S_TA_ShowTwoBufferTimes && priorityGhost != secondaryGhost && secondaryGhost !is null && secondaryGhost.cpCount > 0;
+        bool showTwoTimes = S_TA_ShowTwoBufferTimes && secondaryGhost !is null && priorityGhost != secondaryGhost && secondaryGhost.cpCount > 0;
         // if (showTwoTimes) trace('show two times!');
         // else {
         //     trace('S_TA_ShowTwoBufferTimes: ' + tostring(S_TA_ShowTwoBufferTimes));

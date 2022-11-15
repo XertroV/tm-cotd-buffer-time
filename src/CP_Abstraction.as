@@ -43,6 +43,7 @@ class WrapPlayerCpInfo : CPAbstraction, CPAbstractionOpCmp {
 class WrapGhostInfo : CPAbstraction, CPAbstractionOpCmp {
     private const MLFeed::GhostInfo@ _inner;
     int innerResultTime = -1;
+    array<uint> giCheckpoints;
     int currRaceTime;
     private int _cpCount = 0;
     private int _lastCpTime = 0;
@@ -53,12 +54,14 @@ class WrapGhostInfo : CPAbstraction, CPAbstractionOpCmp {
         if (ghostInfo is null) return;
         @_inner = ghostInfo;
         innerResultTime = ghostInfo.Result_Time;
-        for (uint i = 0; i < ghostInfo.Checkpoints.Length; i++) {
-            if (crt > int(ghostInfo.Checkpoints[i])) _cpCount++;
+        giCheckpoints = ghostInfo.Checkpoints;
+
+        for (uint i = 0; i < giCheckpoints.Length; i++) {
+            if (crt > int(giCheckpoints[i])) _cpCount++;
             else break;
-            _cpTimes.InsertLast(ghostInfo.Checkpoints[i]);
+            _cpTimes.InsertLast(giCheckpoints[i]);
         }
-        if (_cpCount > 0) _lastCpTime = ghostInfo.Checkpoints[_cpCount - 1];
+        if (_cpCount > 0) _lastCpTime = giCheckpoints[_cpCount - 1];
     }
     const array<int>@ get_cpTimes() const {
         return _cpTimes;
@@ -78,23 +81,28 @@ class WrapGhostInfo : CPAbstraction, CPAbstractionOpCmp {
     }
 
     void UpdateFrom(const MLFeed::GhostInfo@ ghostInfo, int crt) {
-        if (ghostInfo is null) return;
-        @_inner = ghostInfo;
+        if (ghostInfo !is null) {
+            if (innerResultTime != ghostInfo.Result_Time) {
+                @_inner = ghostInfo;
+                giCheckpoints = ghostInfo.Checkpoints;
+                innerResultTime = ghostInfo.Result_Time;
+            }
+        }
         currRaceTime = crt;
         if (_cpTimes.Length == 0) _cpTimes.InsertLast(0);
         // shouldn't need to set to 0, but its cheap
-        else _cpTimes[0] = 0;
+        // else _cpTimes[0] = 0;
         _cpCount = 0;
-        for (uint i = 0; i < ghostInfo.Checkpoints.Length; i++) {
-            if (crt > int(ghostInfo.Checkpoints[i])) _cpCount++;
+        for (uint i = 0; i < giCheckpoints.Length; i++) {
+            if (crt > int(giCheckpoints[i])) _cpCount++;
             else break;
         }
         if (int(_cpTimes.Length) != _cpCount + 1) {
             _cpTimes.Resize(_cpCount + 1);
         }
         for (int i = 0; i < _cpCount; i++) {
-            _cpTimes[i+1] = ghostInfo.Checkpoints[i];
+            _cpTimes[i+1] = giCheckpoints[i];
         }
-        _lastCpTime = _cpCount > 0 ? ghostInfo.Checkpoints[_cpCount - 1] : 0;
+        _lastCpTime = _cpCount > 0 ? giCheckpoints[_cpCount - 1] : 0;
     }
 }

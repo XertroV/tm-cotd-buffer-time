@@ -52,7 +52,7 @@ class WrapGhostInfo : CPAbstraction, CPAbstractionOpCmp {
         if (ghostInfo is null) return;
         @_inner = ghostInfo;
         for (uint i = 0; i < ghostInfo.Checkpoints.Length; i++) {
-            if (crt > ghostInfo.Checkpoints[i]) _cpCount++;
+            if (crt > int(ghostInfo.Checkpoints[i])) _cpCount++;
             else break;
             _cpTimes.InsertLast(ghostInfo.Checkpoints[i]);
         }
@@ -76,13 +76,13 @@ class WrapGhostInfo : CPAbstraction, CPAbstractionOpCmp {
         else _cpTimes[0] = 0;
         _cpCount = 0;
         for (uint i = 0; i < ghostInfo.Checkpoints.Length; i++) {
-            if (crt > ghostInfo.Checkpoints[i]) _cpCount++;
+            if (crt > int(ghostInfo.Checkpoints[i])) _cpCount++;
             else break;
         }
-        if (_cpTimes.Length != _cpCount + 1) {
+        if (int(_cpTimes.Length) != _cpCount + 1) {
             _cpTimes.Resize(_cpCount + 1);
         }
-        for (uint i = 0; i < _cpCount; i++) {
+        for (int i = 0; i < _cpCount; i++) {
             _cpTimes[i+1] = ghostInfo.Checkpoints[i];
         }
         _lastCpTime = _cpCount > 0 ? ghostInfo.Checkpoints[_cpCount - 1] : 0;

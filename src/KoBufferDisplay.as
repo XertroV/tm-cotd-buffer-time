@@ -214,6 +214,7 @@ namespace KoBufferUI {
         uint nKOs = koFeedHook.KOsNumber;
         uint preCutoffRank = nPlayers - nKOs;
         uint postCutoffRank = preCutoffRank + 1;
+        uint nbDNFs = 0; // used to track how many DNFs/non-existent players are before the cutoff ranks
         MLFeed::PlayerCpInfo@ preCpInfo = null;
         MLFeed::PlayerCpInfo@ postCpInfo = null;
         MLFeed::PlayerCpInfo@ localPlayer = null;
@@ -223,10 +224,19 @@ namespace KoBufferUI {
         for (uint i = 0; i < sorted.Length; i++) {
             // uint currRank = i + 1;
             auto player = sorted[i];
-            if (player is null) continue; // edge case on changing maps and things
-            if (player.name == localUser) @localPlayer = player;
-            if (player.raceRank == preCutoffRank) @preCpInfo = player;
-            if (player.raceRank == postCutoffRank) @postCpInfo = player;
+            if (player is null) {
+                nbDNFs += 1;
+                continue; // edge case on changing maps, player leaves, etc
+            }
+            else if (player.name == localUser) @localPlayer = player;
+            auto koPlayer = koFeedHook.GetPlayerState(player.name);
+            if (koPlayer.isDNF) nbDNFs += 1;
+            else { // we don't want to use a DNFd player so skip them; if one of these conditions would be true now, it would have been true for the prior player, so we don't want to overwrite it either
+                if (player.raceRank == preCutoffRank + nbDNFs) @preCpInfo = player;
+                if (player.raceRank == postCutoffRank + nbDNFs) @postCpInfo = player;
+            }
+
+            if (localPlayer !is null && postCpInfo !is null) break; // got everything we need
         }
 
         if (localPlayer is null) return;

@@ -34,12 +34,15 @@ class WrapPlayerCpInfo : CPAbstraction, CPAbstractionOpCmp {
     int get_lastCpTime() const {
         return _inner.lastCpTime;
     }
+
+    void UpdateFrom(const MLFeed::PlayerCpInfo@ cpInfo) {
+        @_inner = cpInfo;
+    }
 }
 
 class WrapGhostInfo : CPAbstraction, CPAbstractionOpCmp {
     const MLFeed::GhostInfo@ _inner;
     int currRaceTime;
-    uint lastCpIx;
     int _cpCount = 0;
     int _lastCpTime = 0;
     array<int> _cpTimes;
@@ -62,5 +65,25 @@ class WrapGhostInfo : CPAbstraction, CPAbstractionOpCmp {
     }
     int get_lastCpTime() const {
         return _lastCpTime;
+    }
+
+    void UpdateFrom(const MLFeed::GhostInfo@ ghostInfo, int crt) {
+        @_inner = ghostInfo;
+        currRaceTime = crt;
+        if (_cpTimes.Length == 0) _cpTimes.InsertLast(0);
+        // shouldn't need to set to 0, but its cheap
+        else _cpTimes[0] = 0;
+        _cpCount = 0;
+        for (uint i = 0; i < ghostInfo.Checkpoints.Length; i++) {
+            if (crt > ghostInfo.Checkpoints[i]) _cpCount++;
+            else break;
+        }
+        if (_cpTimes.Length != _cpCount + 1) {
+            _cpTimes.Resize(_cpCount + 1);
+        }
+        for (uint i = 0; i < _cpCount; i++) {
+            _cpTimes[i+1] = ghostInfo.Checkpoints[i];
+        }
+        _lastCpTime = _cpCount > 0 ? ghostInfo.Checkpoints[_cpCount - 1] : 0;
     }
 }

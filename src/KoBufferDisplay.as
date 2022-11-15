@@ -164,6 +164,10 @@ namespace KoBufferUI {
             Render_TA();
     }
 
+    WrapPlayerCpInfo@ ta_playerTime;
+    WrapGhostInfo@ ta_bestGhost;
+    WrapGhostInfo@ ta_pbGhost;
+
     // show buffer in TA against personal best
     void Render_TA() {
         auto ghostData = MLFeed::GetGhostData();
@@ -172,26 +176,35 @@ namespace KoBufferUI {
         auto playerName = KoBuffer::App_CurrPlayground_GameTerminal_GUIPlayerUserName;
         auto localPlayer = raceData.GetPlayer(playerName);
         auto crt = KoBuffer::GetCurrentRaceTime(GetApp());
-        auto bestGhost = ghostData.Ghosts[0];
-        const MLFeed::GhostInfo@ bestPb = null;
+        const MLFeed::GhostInfo@ bestGhost = ghostData.Ghosts[0];
+        const MLFeed::GhostInfo@ pbGhost = null;
         for (uint i = 0; i < ghostData.NbGhosts; i++) {
             auto g = ghostData.Ghosts[i];
             if (g.Nickname == "?Personal Best" || g.Nickname == playerName) {
-                if (bestPb is null || bestPb.Result_Time > g.Result_Time) {
-                    @bestPb = g;
+                if (pbGhost is null || pbGhost.Result_Time > g.Result_Time) {
+                    @pbGhost = g;
                 }
             }
             if (bestGhost.Result_Time > g.Result_Time) {
                 @bestGhost = g;
             }
         }
-        auto lp = WrapPlayerCpInfo(localPlayer);
-        auto bg = WrapGhostInfo(bestGhost, crt);
-        // auto pb = WrapGhostInfo(bestPb !is null ? bestPb : bestGhost, crt); // todo handle this case later
-        bool isBehind = lp > bg;
-        // print("lp: " + lp.ToString() + ", bg: " + bg.ToString() + ", isBehind: " + tostring(isBehind));
-        auto msDelta = CalcMsDelta(lp, isBehind, bg);
-        uint cpDelta = Math::Abs(lp.cpCount - bg.cpCount);
+
+        if (ta_playerTime is null) @ta_playerTime = WrapPlayerCpInfo(localPlayer);
+        else ta_playerTime.UpdateFrom(localPlayer);
+
+        if (ta_bestGhost is null) @ta_bestGhost = WrapGhostInfo(bestGhost, crt);
+        else ta_bestGhost.UpdateFrom(bestGhost, crt);
+
+        // todo handle secondary timer for pb / choice between
+        if (ta_pbGhost is null) @ta_pbGhost = WrapGhostInfo(pbGhost, crt);
+        else ta_pbGhost.UpdateFrom(bestGhost, crt);
+
+        bool isBehind = ta_playerTime > ta_bestGhost;
+
+        // print("ta_playerTime: " + ta_playerTime.ToString() + ", ta_bestGhost: " + ta_bestGhost.ToString() + ", isBehind: " + tostring(isBehind));
+        auto msDelta = CalcMsDelta(ta_playerTime, isBehind, ta_bestGhost);
+        uint cpDelta = Math::Abs(ta_playerTime.cpCount - ta_bestGhost.cpCount);
         DrawBufferTime(msDelta, isBehind, GetBufferTimeColor(cpDelta, isBehind));
     }
 
@@ -302,7 +315,7 @@ namespace KoBufferUI {
             return BufferTime(99999, 99, false, localPlayerLives, !localPlayerLives, localPlayerState.isAlive, localPlayerState.isDNF);
         }
 
-        isBehind = localPlayer.raceRank > targetCpInfo.raceRank; // should never be ==
+        isBehind = localPlayer.raceRank > targetCpInfo.raceRank && targetCpInfo.cpCount > 0; // ranks should never be ==
         uint cpDelta = Math::Abs(localPlayer.cpCount - targetCpInfo.cpCount);
 
         int msDelta = CalcMsDelta(WrapPlayerCpInfo(localPlayer), isBehind, WrapPlayerCpInfo(targetCpInfo));

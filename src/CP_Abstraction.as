@@ -57,6 +57,10 @@ class WrappedTimes : CPAbstraction, CPAbstractionOpCmp {
     int get_lastCpTime() const {
         return _lastCpTime;
     }
+
+    bool get_IsEmpty() const {
+        return innerResultTime <= 0;
+    }
 }
 
 class WrapBestTimes : WrappedTimes {
@@ -86,6 +90,9 @@ class WrapBestTimes : WrappedTimes {
 
     void UpdateFrom(const string &in playerName, const array<uint>@ cpInfo, int crt) {
         currRaceTime = crt;
+        // if (ghostName == playerName && _inner.Length == cpInfo.Length + 1 && _inner[cpInfo.Length] == cpInfo[cpInfo.Length - 1]) {
+        //     // don't need to update but might be a PITA to have extra logic to recalc cpCount etc based on CRT
+        // }
         ghostName = playerName;
         _inner.Resize(cpInfo.Length + 1);
         _inner[0] = 0;

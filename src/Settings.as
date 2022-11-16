@@ -85,13 +85,13 @@ bool Setting_SafeIndicatorInNoKO = true;
 
 
 
-[Setting category="TA / Campaign" name="Show Compared to Best Loaded Ghost?" description="If true, a buffer time will be displayed relative to the best ghost that was loaded at any point since the map was loaded. (The ghost can be unloaded immediately if you want.)"]
+[Setting category="TA / Campaign" name="Show Compared to Ghost?" description="If true, a buffer time will be displayed relative to the best ghost (or one of your choosing) that was loaded at any point since the map was loaded. (The ghost can be unloaded immediately if you want.)"]
 bool S_TA_VsBestGhost = true;
 
-[Setting category="TA / Campaign" name="Show Compared to Best Time?" description="If true, a buffer time will be displayed relative to your best time set on the server, or the best ghost that was loaded with your UserName. (The ghost does not need to be visible or stay loaded.)"]
+[Setting category="TA / Campaign" name="Show Compared to Best Time?" description="If true, a buffer time will be displayed relative to your best time set on the server this session/round."]
 bool S_TA_VsBestRecentTime = true;
 
-[Setting category="TA / Campaign" name="Include Personal Bests in 'Best Time'?" description="If true, the 'Best Time' timer include PB ghosts from past runs when available."]
+[Setting category="TA / Campaign" name="Show Comapred to Personal Bests?" description="If true, a buffer time will be displayed relative to your PB ghost when available, or the best ghost with your user name."]
 bool S_TA_VsPB = true;
 
 [Setting category="TA / Campaign" name="Show two buffer times?" description="If true, when both of the above options are selected, a smaller buffer time will be shown beneath/above the first. (The larger one is the one with priority.)"]
@@ -103,29 +103,51 @@ bool S_TA_ShowDuringCotdQuali = true;
 [Setting category="TA / Campaign" name="Hide when Spectating?" description="When spectating, the buffer time shown will be a comparison to your PB or the best ghost, depending on priority."]
 bool S_TA_HideWhenSpectating = false;
 
+const uint NbTaBufferTimeTypes = 5;
 enum TaBufferTimeType {
-    BestGhost, YourBestTime
+    None, AgainstGhost, YourBestTimeOrPB, YourBestTime, YourPB
 }
 
-[Setting category="TA / Campaign" name="Prioritized Buffer Time" description="When two buffer times are available, which one has priority?"]
-TaBufferTimeType S_TA_PrioritizedType = TaBufferTimeType::YourBestTime;
+[Setting category="TA / Campaign" name="Prioritized Buffer Time" description="When two or more buffer times are available, which one has priority?"]
+TaBufferTimeType S_TA_Priority1Type = TaBufferTimeType::YourBestTimeOrPB;
 
+[Setting category="TA / Campaign" name="Secondary Buffer Time" description="When two or more buffer times are available, which one should be prioritized second?"]
+TaBufferTimeType S_TA_Priority2Type = TaBufferTimeType::AgainstGhost;
+
+[Setting category="TA / Campaign" name="Tertiary Buffer Time" description="When three buffer times are available, which one should be prioritized third? Note: it will not show up unless one of the high priority timers cannot be shown or is a duplicate."]
+TaBufferTimeType S_TA_Priority3Type = TaBufferTimeType::None;
+
+void OnSettingsChanged_TA_EnsureCorrectPriority() {
+    // if (S_TA_Priority1Type == TaBufferTimeType::YourBestTimeOrPB) {
+    //     if (S_TA_Priority2Type != TaBufferTimeType::None)
+    //         S_TA_Priority2Type = TaBufferTimeType::AgainstGhost;
+    //     // S_TA_Priority3Type = TaBufferTimeType::None;
+    //     return;
+    // }
+    if (S_TA_Priority2Type == S_TA_Priority1Type) {
+        S_TA_Priority2Type = S_TA_Priority3Type;
+        S_TA_Priority3Type = TaBufferTimeType::None;
+        return;
+    }
+    // if (S_TA_Priority2Type == TaBufferTimeType::YourBestTimeOrPB
+    //     && S_TA_Priority1Type == TaBufferTimeType::AgainstGhost
+    // ) {
+    //     S_TA_Priority3Type = TaBufferTimeType::None;
+    //     return;
+    // }
+    if (S_TA_Priority3Type == S_TA_Priority2Type || S_TA_Priority3Type == S_TA_Priority1Type) {
+        S_TA_Priority3Type = TaBufferTimeType::None;
+    }
+}
 
 
 
 
 /* updates stuff */
 
-
-#if SIG_DEVELOPER
-[Setting category="Debug"]
-#elif false
-bool blah;
-#else
-[Setting hidden]
-#endif
+// may as well let ppl view past updates if they want to again
+[Setting category="Updates"]
 bool S_News_Viewed_2022_11_15 = false;
-
 
 
 

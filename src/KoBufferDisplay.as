@@ -236,11 +236,39 @@ namespace KoBufferUI {
         }
         UI::Separator();
         UI::Text("\\$bbb  Current Ghosts:");
-        UI::Text("\\$bbb  Priority: " + ((priorityGhost is null || priorityGhost.innerResultTime < 0) ? "null" : (priorityGhost.ghostName + " ("+Time::Format(priorityGhost.innerResultTime)+")")));
-        UI::Text("\\$bbb  Secondary: " + ((secondaryGhost is null || secondaryGhost.innerResultTime < 0) ? "null" : (secondaryGhost.ghostName + " ("+Time::Format(secondaryGhost.innerResultTime)+")")));
+        string choiceLabel = FormatNameAndTime(S_TA_GhostName, S_TA_GhostTime);
+        if (UI::BeginMenu("Ghost Choice:")) {
+            bool choiceBestGhost = S_TA_GhostChoice == GhostChoice::BestGhost;
+            if (UI::MenuItem("Best Ghost", "", choiceBestGhost)) {
+                S_TA_GhostChoice = GhostChoice::BestGhost;
+            }
+            auto GD = MLFeed::GetGhostData();
+            bool listedPriorityGhost = false;
+            string localPlayerName = KoBuffer::Get_GameTerminal_ControlledPlayer_UserName(GetApp());
+            for (uint i = 0; i < GD.Ghosts.Length; i++) {
+                auto item = GD.Ghosts[i];
+                bool selected = item.Result_Time == S_TA_GhostTime && item.Nickname == S_TA_GhostName;
+                if (item.Nickname == localPlayerName || item.Nickname.EndsWith("Personal best"))
+                    continue;  // we handle player ghosts separately
+                if (UI::MenuItem(GhostInfoLabel(item), "", selected)) {
+                    S_TA_GhostChoice = GhostChoice::NamedGhost;
+                    S_TA_GhostName = item.Nickname;
+                    S_TA_GhostTime = item.Result_Time;
+                }
+                listedPriorityGhost = listedPriorityGhost || selected;
+            }
+            if (!listedPriorityGhost) {
+                UI::MenuItem(choiceLabel, "", !choiceBestGhost, false);
+            }
+            UI::EndMenu();
+        }
+        UI::Text("\\$bbb  Priority: " + WrappedTimesLabel(priorityGhost));
+        UI::Text("\\$bbb  Secondary: " + WrappedTimesLabel(secondaryGhost));
+        UI::Text("\\$bbb  Tertiary: " + WrappedTimesLabel(tertiaryGhost));
+
         UI::Separator();
 
-        if (UI::MenuItem("Show Vs. Best Ghost?", "", S_TA_VsBestGhost))
+        if (UI::MenuItem("Show Vs. Ghost?", "", S_TA_VsBestGhost))
             S_TA_VsBestGhost = !S_TA_VsBestGhost;
 
         if (UI::MenuItem("Show Vs. Best Time?", "", S_TA_VsBestRecentTime))
@@ -254,20 +282,45 @@ namespace KoBufferUI {
 
         UI::Separator();
 
-        if (UI::BeginMenu("Proritize: \\$bbb("+tostring(S_TA_PrioritizedType)+")")) {
-            for (uint i = 0; i < 2; i++) {
-                TaBufferTimeType type = TaBufferTimeType(i);
-                string name = tostring(type);
-                if (UI::MenuItem(name, "", S_TA_PrioritizedType == type)) {
-                    S_TA_PrioritizedType = type;
-                }
-            }
+        if (UI::BeginMenu("Priority 1: \\$bbb("+tostring(S_TA_Priority1Type)+")")) {
+            DrawPriorityInner(1, S_TA_Priority1Type, S_TA_Priority1Type);
+            UI::EndMenu();
+        }
+        if (UI::BeginMenu("Priority 2: \\$bbb("+tostring(S_TA_Priority2Type)+")")) {
+            DrawPriorityInner(2, S_TA_Priority2Type, S_TA_Priority2Type);
+            UI::EndMenu();
+        }
+        if (UI::BeginMenu("Priority 3: \\$bbb("+tostring(S_TA_Priority3Type)+")")) {
+            DrawPriorityInner(3, S_TA_Priority3Type, S_TA_Priority3Type);
             UI::EndMenu();
         }
         // UI::Text("\\$bbb   Currently prioritizing: " + tostring(S_TA_PrioritizedType));
         // auto otherPriorityType = TaBufferTimeType((uint(S_TA_PrioritizedType) + 1 ) % 2);
         // if (UI::MenuItem("Change priority to " + tostring(otherPriorityType)))
         //     S_TA_PrioritizedType = otherPriorityType;
+    }
+
+    void DrawPriorityInner(uint priority, TaBufferTimeType _S_Selected, TaBufferTimeType &out _S_Type) {
+        for (uint i = 0; i < NbTaBufferTimeTypes; i++) {
+            TaBufferTimeType type = TaBufferTimeType(i);
+            string name = tostring(type);
+            if (UI::MenuItem(name + "##" + priority, "", _S_Selected == type)) {
+                _S_Type = type;
+                startnew(OnSettingsChanged_TA_EnsureCorrectPriority);
+            }
+        }
+    }
+
+    const string FormatNameAndTime(const string &in name, uint time) {
+        return name + " ("+Time::Format(time)+")";
+    }
+
+    const string WrappedTimesLabel(const WrappedTimes@ times) {
+        return ((times is null || times.innerResultTime < 0) ? "null" : (FormatNameAndTime(times.ghostName, times.innerResultTime)));
+    }
+
+    const string GhostInfoLabel(const MLFeed::GhostInfo@ ghost) {
+        return ((ghost is null) ? "null" : (ghost.Nickname + " ("+Time::Format(ghost.Result_Time)+")"));
     }
 
     void RenderUnknownMenuMainInner() {
@@ -323,6 +376,7 @@ namespace KoBufferUI {
     WrapGhostInfo@ ta_pbGhost;
     WrappedTimes@ priorityGhost;
     WrappedTimes@ secondaryGhost;
+    WrappedTimes@ tertiaryGhost;
 
     void Reset_TA() {
         @ta_playerTime = null;
@@ -330,11 +384,25 @@ namespace KoBufferUI {
         @ta_pbGhost = null;
         @priorityGhost = null;
         @secondaryGhost = null;
+        @tertiaryGhost = null;
     }
+
+    enum GhostChoice {
+        BestGhost,
+        NamedGhost
+    }
+
+    [Setting hidden]
+    GhostChoice S_TA_GhostChoice = GhostChoice::BestGhost;
+
+    [Setting hidden]
+    string S_TA_GhostName = "XertroV";
+
+    [Setting hidden]
+    int S_TA_GhostTime = 1337;
 
     // show buffer in TA against personal best
     void Render_TA() {
-        // trace('1');
         auto crt = KoBuffer::GetCurrentRaceTime(GetApp());
 
         auto ghostData = MLFeed::GetGhostData();
@@ -350,22 +418,32 @@ namespace KoBufferUI {
 
         if (!S_TA_VsBestGhost && !S_TA_VsBestRecentTime && !S_TA_VsPB) return;
 
+
         bool isUiSeqPlaying = currSeq == CGamePlaygroundUIConfig::EUISequence::Playing;
         bool updateGhosts = isUiSeqPlaying;
-        const MLFeed::GhostInfo@ bestGhost = null;
+        const MLFeed::GhostInfo@ chosenGhost = null;
         const MLFeed::GhostInfo@ pbGhost = null;
+        bool updateBestGhostNotChosen = S_TA_GhostChoice == GhostChoice::BestGhost;
+
         if (updateGhosts) {
             for (uint i = 0; i < ghostData.NbGhosts; i++) {
                 auto g = ghostData.Ghosts[i];
                 bool nameMatches = g.Nickname == playerName;
                 bool namePb = g.Nickname.EndsWith("Personal best");
-                bool checkGhostBestTime = (S_TA_VsBestRecentTime && nameMatches) || (S_TA_VsPB && namePb);
-                if (checkGhostBestTime && (pbGhost is null || (pbGhost.Result_Time > g.Result_Time))) {
+
+                // pb ghost
+                bool checkGhostForPb = S_TA_VsPB && (nameMatches || namePb);
+                // look for best pb ghost
+                if (checkGhostForPb && (pbGhost is null || (pbGhost.Result_Time > g.Result_Time))) {
                     @pbGhost = g;
                 }
 
-                if (!nameMatches && !namePb && S_TA_VsBestGhost && (bestGhost is null || bestGhost.Result_Time > g.Result_Time)) {
-                    @bestGhost = g;
+                // chosen ghost
+                if (!nameMatches && !namePb && S_TA_VsBestGhost) {
+                    if (updateBestGhostNotChosen && (chosenGhost is null || chosenGhost.Result_Time > g.Result_Time))
+                        @chosenGhost = g;
+                    else if (chosenGhost is null && g.Nickname == S_TA_GhostName && g.Result_Time == S_TA_GhostTime)
+                        @chosenGhost = g;
                 }
             }
         }
@@ -377,17 +455,21 @@ namespace KoBufferUI {
         // then we want to show the final time of the ghost
         // (i.e., as soon as the player finishes).
         if (!isUiSeqPlaying) {
-            if (bestGhost !is null) crt = Math::Max(crt, bestGhost.Result_Time);
+            if (chosenGhost !is null) crt = Math::Max(crt, chosenGhost.Result_Time);
             if (pbGhost !is null) crt = Math::Max(crt, pbGhost.Result_Time);
             crt *= 2; // just to be sure.
         }
 
-        if (ta_bestTime is null) @ta_bestTime = WrapBestTimes(playerName, MLFeed::GetPlayersBestTimes(playerName), crt);
-        else ta_bestTime.UpdateFrom(playerName, MLFeed::GetPlayersBestTimes(playerName), crt);
+        if (S_TA_VsBestRecentTime) {
+            if (ta_bestTime is null) @ta_bestTime = WrapBestTimes(playerName, MLFeed::GetPlayersBestTimes(playerName), crt);
+            else ta_bestTime.UpdateFrom(playerName, MLFeed::GetPlayersBestTimes(playerName), crt);
+        } else {
+            @ta_bestTime = null;
+        }
 
         if (S_TA_VsBestGhost) {
-            if (ta_bestGhost is null) @ta_bestGhost = WrapGhostInfo(bestGhost, crt);
-            else ta_bestGhost.UpdateFrom(bestGhost, crt);
+            if (ta_bestGhost is null) @ta_bestGhost = WrapGhostInfo(chosenGhost, crt);
+            else ta_bestGhost.UpdateFrom(chosenGhost, crt);
         } else {
             @ta_bestGhost = null;
         }
@@ -396,34 +478,34 @@ namespace KoBufferUI {
             // this might be a pb ghost if the setting was toggled. nullify it
             @ta_pbGhost = null;
         }
-        if (S_TA_VsBestRecentTime || S_TA_VsPB) {
+        if (S_TA_VsPB) {
             if (ta_pbGhost is null) @ta_pbGhost = WrapGhostInfo(pbGhost, crt);
             else ta_pbGhost.UpdateFrom(pbGhost, crt);
         } else {
             @ta_pbGhost = null;
         }
 
-        @priorityGhost =
-            ( S_TA_PrioritizedType == TaBufferTimeType::YourBestTime
-              && ta_pbGhost !is null
-            ) ? ta_pbGhost : ta_bestGhost;
-        if (priorityGhost is null || priorityGhost.innerResultTime == -1) {
-            // then swap
-            @priorityGhost = priorityGhost == ta_pbGhost ? ta_bestGhost : ta_pbGhost;
-        }
-        if (priorityGhost is null || priorityGhost.innerResultTime < 0) {
-            return;
+        @priorityGhost = SelectBasedOnType(S_TA_Priority1Type, ta_bestGhost, ta_bestTime, ta_pbGhost);
+        @secondaryGhost = SelectBasedOnType(S_TA_Priority2Type, ta_bestGhost, ta_bestTime, ta_pbGhost);
+        @tertiaryGhost = SelectBasedOnType(S_TA_Priority3Type, ta_bestGhost, ta_bestTime, ta_pbGhost);
+
+        if (priorityGhost is null || priorityGhost.IsEmpty) {
+            if (secondaryGhost is null || secondaryGhost.IsEmpty) {
+                @priorityGhost = tertiaryGhost;
+                @tertiaryGhost = null;
+            } else {
+                @priorityGhost = secondaryGhost;
+                @secondaryGhost = tertiaryGhost;
+            }
         }
 
-        @secondaryGhost = priorityGhost == ta_pbGhost ? ta_bestGhost : ta_pbGhost;
+        if (secondaryGhost is null || secondaryGhost.IsEmpty || priorityGhost == secondaryGhost) {
+            @secondaryGhost = tertiaryGhost;
+            @tertiaryGhost = null;
+        }
 
-        bool showTwoTimes = S_TA_ShowTwoBufferTimes && secondaryGhost !is null && priorityGhost != secondaryGhost && secondaryGhost.cpCount > 0;
-        // if (showTwoTimes) trace('show two times!');
-        // else {
-        //     trace('S_TA_ShowTwoBufferTimes: ' + tostring(S_TA_ShowTwoBufferTimes));
-        //     trace('secondaryGhost: ' + secondaryGhost.ToString());
-        //     trace('priorityGhost != secondaryGhost: ' + tostring(priorityGhost != secondaryGhost));
-        // }
+        bool showTwoTimes = S_TA_ShowTwoBufferTimes && secondaryGhost !is null && priorityGhost != secondaryGhost && not secondaryGhost.IsEmpty;
+
         // priority ghost
         bool isBehind = ta_playerTime > priorityGhost;
         // print("ta_playerTime: " + ta_playerTime.ToString() + ", priorityGhost: " + priorityGhost.ToString() + ", isBehind: " + tostring(isBehind));
@@ -437,6 +519,16 @@ namespace KoBufferUI {
             cpDelta = Math::Abs(ta_playerTime.cpCount - secondaryGhost.cpCount);
             DrawBufferTime(msDelta, isBehind, GetBufferTimeColor(cpDelta, isBehind), true);
         }
+    }
+
+    WrappedTimes@ SelectBasedOnType(TaBufferTimeType type, WrappedTimes@ ghost, WrappedTimes@ bestPlayerTimes, WrappedTimes@ pbGhost) {
+        if (type == TaBufferTimeType::None) return null;
+        if (type == TaBufferTimeType::AgainstGhost) return ghost;
+        if (type == TaBufferTimeType::YourBestTime) return bestPlayerTimes;
+        if (type == TaBufferTimeType::YourPB) return pbGhost;
+        if (type == TaBufferTimeType::YourBestTimeOrPB) return (pbGhost < bestPlayerTimes) ? pbGhost : bestPlayerTimes;
+        throw("SelectBasedOnType invalid type");
+        return null;
     }
 
     void Render_KO() {

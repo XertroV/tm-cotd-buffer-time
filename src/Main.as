@@ -55,6 +55,7 @@ void OnSettingsChanged() {
     if (Setting_BufferFontSize < 0.1) {
         Setting_BufferFontSize = 60 * Draw::GetHeight() / 1440;
     }
+    startnew(OnSettingsChanged_TA_EnsureCorrectPriority);
 }
 
 /*

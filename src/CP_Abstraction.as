@@ -62,6 +62,13 @@ class WrappedTimes : CPAbstraction, CPAbstractionOpCmp {
     bool get_IsEmpty() const {
         return innerResultTime <= 0;
     }
+
+    bool opEquals(const WrapGhostInfo@ other) {
+        return other !is null
+            && other.cpCount == this.cpCount
+            && other.lastCpTime == this.lastCpTime
+            && innerResultTime == other.innerResultTime;
+    }
 }
 
 class WrapBestTimes : WrappedTimes {
@@ -133,13 +140,6 @@ class WrapGhostInfo : WrappedTimes {
             _cpTimes.InsertLast(giCheckpoints[i]);
         }
         if (_cpCount > 0) _lastCpTime = giCheckpoints[_cpCount - 1];
-    }
-
-    bool opEquals(const WrapGhostInfo@ other) {
-        return other !is null
-            && other.cpCount == this.cpCount
-            && other.lastCpTime == this.lastCpTime
-            && innerResultTime == other.innerResultTime;
     }
 
     void UpdateFrom(const MLFeed::GhostInfo@ ghostInfo, int crt) {

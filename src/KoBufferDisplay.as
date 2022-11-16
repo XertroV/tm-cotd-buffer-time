@@ -245,8 +245,13 @@ namespace KoBufferUI {
             auto GD = MLFeed::GetGhostData();
             bool listedPriorityGhost = false;
             // string localPlayerName = KoBuffer::Get_GameTerminal_ControlledPlayer_UserName(GetApp());
+            dictionary seenGhosts;
+            string key;
             for (uint i = 0; i < GD.Ghosts.Length; i++) {
                 auto item = GD.Ghosts[i];
+                key = item.Nickname + item.Result_Time;
+                if (seenGhosts.Exists(key)) continue;
+                seenGhosts[key] = true;
                 bool selected = item.Result_Time == S_TA_GhostTime && item.Nickname == S_TA_GhostName;
                 // if (item.Nickname == localPlayerName || item.Nickname.EndsWith("Personal best"))
                 //     continue;  // we handle player ghosts separately
@@ -464,7 +469,6 @@ namespace KoBufferUI {
         if (S_TA_VsBestRecentTime) {
             if (ta_bestTime is null) @ta_bestTime = WrapBestTimes(playerName, MLFeed::GetPlayersBestTimes(playerName), crt);
             else ta_bestTime.UpdateFrom(playerName, MLFeed::GetPlayersBestTimes(playerName), crt);
-            trace(ta_bestTime.ToString());
         } else {
             @ta_bestTime = null;
         }

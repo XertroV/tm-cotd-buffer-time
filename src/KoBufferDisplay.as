@@ -244,13 +244,13 @@ namespace KoBufferUI {
             }
             auto GD = MLFeed::GetGhostData();
             bool listedPriorityGhost = false;
-            string localPlayerName = KoBuffer::Get_GameTerminal_ControlledPlayer_UserName(GetApp());
+            // string localPlayerName = KoBuffer::Get_GameTerminal_ControlledPlayer_UserName(GetApp());
             for (uint i = 0; i < GD.Ghosts.Length; i++) {
                 auto item = GD.Ghosts[i];
                 bool selected = item.Result_Time == S_TA_GhostTime && item.Nickname == S_TA_GhostName;
-                if (item.Nickname == localPlayerName || item.Nickname.EndsWith("Personal best"))
-                    continue;  // we handle player ghosts separately
-                if (UI::MenuItem(GhostInfoLabel(item), "", selected)) {
+                // if (item.Nickname == localPlayerName || item.Nickname.EndsWith("Personal best"))
+                //     continue;  // we handle player ghosts separately
+                if (UI::MenuItem(GhostInfoLabel(item), "", selected && !choiceBestGhost)) {
                     S_TA_GhostChoice = GhostChoice::NamedGhost;
                     S_TA_GhostName = item.Nickname;
                     S_TA_GhostTime = item.Result_Time;
@@ -274,7 +274,7 @@ namespace KoBufferUI {
         if (UI::MenuItem("Show Vs. Best Time?", "", S_TA_VsBestRecentTime))
             S_TA_VsBestRecentTime = !S_TA_VsBestRecentTime;
 
-        if (UI::MenuItem("Include PB in Best Time?", "", S_TA_VsPB))
+        if (UI::MenuItem("Show Vs. PB?", "", S_TA_VsPB))
             S_TA_VsPB = !S_TA_VsPB;
 
         if (UI::MenuItem("Show Two Buf. Times?", "", S_TA_ShowTwoBufferTimes))
@@ -433,7 +433,7 @@ namespace KoBufferUI {
                 bool namePb = g.Nickname.EndsWith("Personal best");
 
                 // pb ghost
-                bool checkGhostForPb = S_TA_VsPB && (nameMatches || namePb);
+                bool checkGhostForPb = !isSpectating && S_TA_VsPB && (nameMatches || namePb);
                 // look for best pb ghost
                 if (checkGhostForPb && (pbGhost is null || (pbGhost.Result_Time > g.Result_Time))) {
                     @pbGhost = g;
@@ -464,6 +464,7 @@ namespace KoBufferUI {
         if (S_TA_VsBestRecentTime) {
             if (ta_bestTime is null) @ta_bestTime = WrapBestTimes(playerName, MLFeed::GetPlayersBestTimes(playerName), crt);
             else ta_bestTime.UpdateFrom(playerName, MLFeed::GetPlayersBestTimes(playerName), crt);
+            trace(ta_bestTime.ToString());
         } else {
             @ta_bestTime = null;
         }
@@ -475,11 +476,7 @@ namespace KoBufferUI {
             @ta_bestGhost = null;
         }
 
-        if (ta_pbGhost !is null && !S_TA_VsPB && ta_pbGhost.ghostName != playerName) {
-            // this might be a pb ghost if the setting was toggled. nullify it
-            @ta_pbGhost = null;
-        }
-        if (S_TA_VsPB) {
+        if (S_TA_VsPB && !isSpectating) {
             if (ta_pbGhost is null) @ta_pbGhost = WrapGhostInfo(pbGhost, crt);
             else ta_pbGhost.UpdateFrom(pbGhost, crt);
         } else {
@@ -527,7 +524,7 @@ namespace KoBufferUI {
         if (type == TaBufferTimeType::AgainstGhost) return ghost;
         if (type == TaBufferTimeType::YourBestTime) return bestPlayerTimes;
         if (type == TaBufferTimeType::YourPB) return pbGhost;
-        if (type == TaBufferTimeType::YourBestTimeOrPB) return (pbGhost < bestPlayerTimes) ? pbGhost : bestPlayerTimes;
+        if (type == TaBufferTimeType::BestTimeOrPB) return (pbGhost !is null && pbGhost < bestPlayerTimes) ? pbGhost : bestPlayerTimes;
         throw("SelectBasedOnType invalid type");
         return null;
     }

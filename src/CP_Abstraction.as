@@ -8,6 +8,7 @@ interface CPAbstraction {
 
 mixin class CPAbstractionOpCmp : CPAbstraction {
     int opCmp(const CPAbstraction@ other) const {
+        if (other is null) return -1;
         if (this.cpCount > other.cpCount) return -1;
         if (this.cpCount < other.cpCount) return 1;
         if (this.lastCpTime > other.lastCpTime) return 1;

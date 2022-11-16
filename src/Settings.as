@@ -105,11 +105,11 @@ bool S_TA_HideWhenSpectating = false;
 
 const uint NbTaBufferTimeTypes = 5;
 enum TaBufferTimeType {
-    None, AgainstGhost, YourBestTimeOrPB, YourBestTime, YourPB
+    None, AgainstGhost, BestTimeOrPB, YourBestTime, YourPB
 }
 
 [Setting category="TA / Campaign" name="Prioritized Buffer Time" description="When two or more buffer times are available, which one has priority?"]
-TaBufferTimeType S_TA_Priority1Type = TaBufferTimeType::YourBestTimeOrPB;
+TaBufferTimeType S_TA_Priority1Type = TaBufferTimeType::BestTimeOrPB;
 
 [Setting category="TA / Campaign" name="Secondary Buffer Time" description="When two or more buffer times are available, which one should be prioritized second?"]
 TaBufferTimeType S_TA_Priority2Type = TaBufferTimeType::AgainstGhost;
@@ -118,7 +118,7 @@ TaBufferTimeType S_TA_Priority2Type = TaBufferTimeType::AgainstGhost;
 TaBufferTimeType S_TA_Priority3Type = TaBufferTimeType::None;
 
 void OnSettingsChanged_TA_EnsureCorrectPriority() {
-    // if (S_TA_Priority1Type == TaBufferTimeType::YourBestTimeOrPB) {
+    // if (S_TA_Priority1Type == TaBufferTimeType::BestTimeOrPB) {
     //     if (S_TA_Priority2Type != TaBufferTimeType::None)
     //         S_TA_Priority2Type = TaBufferTimeType::AgainstGhost;
     //     // S_TA_Priority3Type = TaBufferTimeType::None;
@@ -129,7 +129,7 @@ void OnSettingsChanged_TA_EnsureCorrectPriority() {
         S_TA_Priority3Type = TaBufferTimeType::None;
         return;
     }
-    // if (S_TA_Priority2Type == TaBufferTimeType::YourBestTimeOrPB
+    // if (S_TA_Priority2Type == TaBufferTimeType::BestTimeOrPB
     //     && S_TA_Priority1Type == TaBufferTimeType::AgainstGhost
     // ) {
     //     S_TA_Priority3Type = TaBufferTimeType::None;

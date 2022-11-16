@@ -103,19 +103,26 @@ bool S_TA_ShowDuringCotdQuali = true;
 [Setting category="TA / Campaign" name="Hide when Spectating?" description="When spectating, the buffer time shown will be a comparison to your PB or the best ghost, depending on priority."]
 bool S_TA_HideWhenSpectating = false;
 
+[Setting category="TA / Campaign" name="Update Timer Immediately?" description="By default, the buffer time will act as though you're in a live match -- you won't know a ghost hit a CP until it would if it were live. With this setting enabled, deltas will be shown instantly when you are leading and hit a new CP (this is roughly how checkpoint splits normally work)."]
+bool S_TA_UpdateTimerImmediately = false;
+
 const uint NbTaBufferTimeTypes = 5;
 enum TaBufferTimeType {
     None, AgainstGhost, BestTimeOrPB, YourBestTime, YourPB
 }
 
 [Setting category="TA / Campaign" name="Prioritized Buffer Time" description="When two or more buffer times are available, which one has priority?"]
-TaBufferTimeType S_TA_Priority1Type = TaBufferTimeType::BestTimeOrPB;
+TaBufferTimeType S_TA_Priority1Type = TaBufferTimeType::YourBestTime;
 
 [Setting category="TA / Campaign" name="Secondary Buffer Time" description="When two or more buffer times are available, which one should be prioritized second?"]
-TaBufferTimeType S_TA_Priority2Type = TaBufferTimeType::AgainstGhost;
+TaBufferTimeType S_TA_Priority2Type = TaBufferTimeType::YourPB;
 
 [Setting category="TA / Campaign" name="Tertiary Buffer Time" description="When three buffer times are available, which one should be prioritized third? Note: it will not show up unless one of the high priority timers cannot be shown or is a duplicate."]
-TaBufferTimeType S_TA_Priority3Type = TaBufferTimeType::None;
+TaBufferTimeType S_TA_Priority3Type = TaBufferTimeType::AgainstGhost;
+
+
+
+
 
 void OnSettingsChanged_TA_EnsureCorrectPriority() {
     // if (S_TA_Priority1Type == TaBufferTimeType::BestTimeOrPB) {

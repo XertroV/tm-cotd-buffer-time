@@ -74,7 +74,7 @@ class WrappedTimes : CPAbstraction, CPAbstractionOpCmp {
 class WrapBestTimes : WrappedTimes {
     private array<int> _inner;
 
-    WrapBestTimes(const string &in playerName, const array<uint>@ cpInfo, int crt) {
+    WrapBestTimes(const string &in playerName, const array<uint>@ cpInfo, int crt, int minCPs) {
         currRaceTime = crt;
         ghostName = playerName;
         _inner.Resize(cpInfo.Length + 1);
@@ -85,7 +85,7 @@ class WrapBestTimes : WrappedTimes {
             innerResultTime = cpInfo[cpInfo.Length - 1];
         for (uint i = 0; i < cpInfo.Length; i++) {
             _inner[i+1] = cpInfo[i];
-            if (int(cpInfo[i]) < crt) {
+            if (int(cpInfo[i]) <= crt || (S_TA_UpdateTimerImmediately && i < minCPs)) {
                 _cpCount++;
                 _lastCpTime = cpInfo[i];
             }
@@ -96,7 +96,7 @@ class WrapBestTimes : WrappedTimes {
         }
     }
 
-    void UpdateFrom(const string &in playerName, const array<uint>@ cpInfo, int crt) {
+    void UpdateFrom(const string &in playerName, const array<uint>@ cpInfo, int crt, int minCPs) {
         currRaceTime = crt;
         // if (ghostName == playerName && _inner.Length == cpInfo.Length + 1 && _inner[cpInfo.Length] == cpInfo[cpInfo.Length - 1]) {
         //     // don't need to update but might be a PITA to have extra logic to recalc cpCount etc based on CRT
@@ -110,7 +110,7 @@ class WrapBestTimes : WrappedTimes {
             innerResultTime = cpInfo[cpInfo.Length - 1];
         for (uint i = 0; i < cpInfo.Length; i++) {
             _inner[i+1] = cpInfo[i];
-            if (int(cpInfo[i]) < crt) {
+            if (int(cpInfo[i]) <= crt || (S_TA_UpdateTimerImmediately && i < minCPs)) {
                 _cpCount++;
                 _lastCpTime = cpInfo[i];
             }
@@ -125,7 +125,7 @@ class WrapBestTimes : WrappedTimes {
 class WrapGhostInfo : WrappedTimes {
     private const MLFeed::GhostInfo@ _inner;
     array<uint> giCheckpoints;
-    WrapGhostInfo(const MLFeed::GhostInfo@ ghostInfo, int crt) {
+    WrapGhostInfo(const MLFeed::GhostInfo@ ghostInfo, int crt, int minCPs) {
         currRaceTime = crt;
         _cpTimes.InsertLast(0);
         if (ghostInfo is null) return;
@@ -138,14 +138,14 @@ class WrapGhostInfo : WrappedTimes {
             ghostName = ghostInfo.Nickname;
 
         for (uint i = 0; i < giCheckpoints.Length; i++) {
-            if (crt > int(giCheckpoints[i])) _cpCount++;
+            if (int(giCheckpoints[i]) <= crt || (S_TA_UpdateTimerImmediately && i < minCPs)) _cpCount++;
             else break;
             _cpTimes.InsertLast(giCheckpoints[i]);
         }
         if (_cpCount > 0) _lastCpTime = giCheckpoints[_cpCount - 1];
     }
 
-    void UpdateFrom(const MLFeed::GhostInfo@ ghostInfo, int crt) {
+    void UpdateFrom(const MLFeed::GhostInfo@ ghostInfo, int crt, int minCPs) {
         if (ghostInfo !is null) {
             if (innerResultTime != ghostInfo.Result_Time) {
                 @_inner = ghostInfo;
@@ -163,7 +163,7 @@ class WrapGhostInfo : WrappedTimes {
         // else _cpTimes[0] = 0;
         _cpCount = 0;
         for (uint i = 0; i < giCheckpoints.Length; i++) {
-            if (crt > int(giCheckpoints[i])) _cpCount++;
+            if (int(giCheckpoints[i]) <= crt || (S_TA_UpdateTimerImmediately && i < minCPs)) _cpCount++;
             else break;
         }
         if (int(_cpTimes.Length) != _cpCount + 1) {

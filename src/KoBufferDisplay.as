@@ -286,6 +286,12 @@ namespace KoBufferUI {
         if (UI::MenuItem("Show Two Buf. Times?", "", S_TA_ShowTwoBufferTimes))
             S_TA_ShowTwoBufferTimes = !S_TA_ShowTwoBufferTimes;
 
+        if (UI::MenuItem("Hide When Spectating?", "", S_TA_HideWhenSpectating))
+            S_TA_HideWhenSpectating = !S_TA_HideWhenSpectating;
+
+        if (UI::MenuItem("Update Timer Immediately?", "", S_TA_UpdateTimerImmediately))
+            S_TA_UpdateTimerImmediately = !S_TA_UpdateTimerImmediately;
+
         UI::Separator();
 
         if (UI::BeginMenu("Priority 1: \\$bbb("+tostring(S_TA_Priority1Type)+")")) {
@@ -469,22 +475,22 @@ namespace KoBufferUI {
 
         auto @playerBestTimes = MLFeed::GetPlayersBestTimes(playerName);
         if (S_TA_VsBestRecentTime && playerBestTimes !is null && playerBestTimes.Length > 0) {
-            if (ta_bestTime is null) @ta_bestTime = WrapBestTimes(playerName, playerBestTimes, crt);
-            else ta_bestTime.UpdateFrom(playerName, playerBestTimes, crt);
+            if (ta_bestTime is null) @ta_bestTime = WrapBestTimes(playerName, playerBestTimes, crt, ta_playerTime.cpCount);
+            else ta_bestTime.UpdateFrom(playerName, playerBestTimes, crt, ta_playerTime.cpCount);
         } else {
             @ta_bestTime = null;
         }
 
         if (S_TA_VsBestGhost) {
-            if (ta_bestGhost is null) @ta_bestGhost = WrapGhostInfo(chosenGhost, crt);
-            else ta_bestGhost.UpdateFrom(chosenGhost, crt);
+            if (ta_bestGhost is null) @ta_bestGhost = WrapGhostInfo(chosenGhost, crt, ta_playerTime.cpCount);
+            else ta_bestGhost.UpdateFrom(chosenGhost, crt, ta_playerTime.cpCount);
         } else {
             @ta_bestGhost = null;
         }
 
         if (S_TA_VsPB && !isSpectating) {
-            if (ta_pbGhost is null) @ta_pbGhost = WrapGhostInfo(pbGhost, crt);
-            else ta_pbGhost.UpdateFrom(pbGhost, crt);
+            if (ta_pbGhost is null) @ta_pbGhost = WrapGhostInfo(pbGhost, crt, ta_playerTime.cpCount);
+            else ta_pbGhost.UpdateFrom(pbGhost, crt, ta_playerTime.cpCount);
         } else {
             @ta_pbGhost = null;
         }

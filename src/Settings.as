@@ -114,6 +114,22 @@ TaBufferTimeType S_TA_PrioritizedType = TaBufferTimeType::YourBestTime;
 
 
 
+/* updates stuff */
+
+
+#if SIG_DEVELOPER
+[Setting category="Debug"]
+#elif false
+bool blah;
+#else
+[Setting hidden]
+#endif
+bool S_News_Viewed_2022_11_15 = false;
+
+
+
+
+/* dev stuff */
 
 
 #if SIG_DEVELOPER

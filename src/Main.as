@@ -21,12 +21,14 @@ void Main() {
     }
 }
 
+
 void OnDestroyed() { _Unload(); }
 void OnDisabled() { _Unload(); }
 void _Unload() {
 }
 
 void Render() {
+    Updates::Render();
     KoBufferUI::Render();
 }
 

@@ -236,8 +236,8 @@ namespace KoBufferUI {
         }
         UI::Separator();
         UI::Text("\\$bbb  Current Ghosts:");
-        UI::Text("\\$bbb  Priority: " + (priorityGhost is null ? "null" : priorityGhost.ghostName));
-        UI::Text("\\$bbb  Secondary: " + (secondaryGhost is null ? "null" : secondaryGhost.ghostName));
+        UI::Text("\\$bbb  Priority: " + ((priorityGhost is null || priorityGhost.innerResultTime < 0) ? "null" : (priorityGhost.ghostName + " ("+Time::Format(priorityGhost.innerResultTime)+")")));
+        UI::Text("\\$bbb  Secondary: " + ((secondaryGhost is null || secondaryGhost.innerResultTime < 0) ? "null" : (secondaryGhost.ghostName + " ("+Time::Format(secondaryGhost.innerResultTime)+")")));
         UI::Separator();
 
         if (UI::MenuItem("Show Vs. Best Ghost?", "", S_TA_VsBestGhost))
@@ -275,12 +275,12 @@ namespace KoBufferUI {
         UI::TextWrapped("You should never see this. Sorry.\nPlease submit a bug report including at least the game mode and your settings.");
     }
 
-    float _preview_secondaryTimerTime = 0;
-    float _preview_lastTime = 0;
+    int _preview_secondaryTimerTime = 0;
+    int _preview_lastTime = 0;
 
     void ShowPreview(bool isSecondary = false) {
         int time = int(Time::Now);
-        float secDelta = time - _preview_lastTime;
+        int secDelta = time - _preview_lastTime;
         _preview_lastTime = time;
         if (time % 2000 > 500) _preview_secondaryTimerTime += secDelta;
         time = isSecondary ? _preview_secondaryTimerTime : time;
@@ -300,12 +300,16 @@ namespace KoBufferUI {
             return;
         }
         currSeq = KoBuffer::GetUiSequence(GetApp());
-        if (currSeq != CGamePlaygroundUIConfig::EUISequence::Playing
+        bool skipSequence =
+            currSeq != CGamePlaygroundUIConfig::EUISequence::Playing
             && currSeq != CGamePlaygroundUIConfig::EUISequence::Finish
-            && currSeq != CGamePlaygroundUIConfig::EUISequence::EndRound
-            ) return;
-        if (!g_koBufferUIVisible) return;
-        if (S_ShowOnlyWhenInterfaceHidden && !KoBuffer::IsInterfaceHidden(GetApp())) return;
+            && currSeq != CGamePlaygroundUIConfig::EUISequence::EndRound;
+        if (!g_koBufferUIVisible || skipSequence
+            || (S_ShowOnlyWhenInterfaceHidden && !KoBuffer::IsInterfaceHidden(GetApp()))
+        ) {
+            Reset_TA();
+            return;
+        }
 
         if (S_ShowBufferTimeInKO && KoBuffer::IsGameModeCotdKO)
             Render_KO();
@@ -314,10 +318,19 @@ namespace KoBufferUI {
     }
 
     WrapPlayerCpInfo@ ta_playerTime;
+    WrapBestTimes@ ta_bestTime;
     WrapGhostInfo@ ta_bestGhost;
     WrapGhostInfo@ ta_pbGhost;
-    WrapGhostInfo@ priorityGhost;
-    WrapGhostInfo@ secondaryGhost;
+    WrappedTimes@ priorityGhost;
+    WrappedTimes@ secondaryGhost;
+
+    void Reset_TA() {
+        @ta_playerTime = null;
+        @ta_bestGhost = null;
+        @ta_pbGhost = null;
+        @priorityGhost = null;
+        @secondaryGhost = null;
+    }
 
     // show buffer in TA against personal best
     void Render_TA() {
@@ -335,23 +348,23 @@ namespace KoBufferUI {
         auto localPlayer = raceData.GetPlayer(playerName);
         if (localPlayer is null) return;
 
-        if (!S_TA_VsBestGhost && !S_TA_VsPB) return;
+        if (!S_TA_VsBestGhost && !S_TA_VsBestRecentTime && !S_TA_VsPB) return;
 
-        bool updateGhosts = currSeq == CGamePlaygroundUIConfig::EUISequence::Playing;
-        const MLFeed::GhostInfo@ bestGhost = (updateGhosts && S_TA_VsBestGhost) ? ghostData.Ghosts[0] : null;
+        bool isUiSeqPlaying = currSeq == CGamePlaygroundUIConfig::EUISequence::Playing;
+        bool updateGhosts = isUiSeqPlaying;
+        const MLFeed::GhostInfo@ bestGhost = null;
         const MLFeed::GhostInfo@ pbGhost = null;
         if (updateGhosts) {
             for (uint i = 0; i < ghostData.NbGhosts; i++) {
                 auto g = ghostData.Ghosts[i];
-
-                bool checkGhostBestTime =
-                    (S_TA_VsBestRecentTime && g.Nickname == playerName)
-                    || (S_TA_VsPB && g.Nickname.EndsWith("Personal best"));
-                if (checkGhostBestTime && (pbGhost is null || pbGhost.Result_Time > g.Result_Time)) {
+                bool nameMatches = g.Nickname == playerName;
+                bool namePb = g.Nickname.EndsWith("Personal best");
+                bool checkGhostBestTime = (S_TA_VsBestRecentTime && nameMatches) || (S_TA_VsPB && namePb);
+                if (checkGhostBestTime && (pbGhost is null || (pbGhost.Result_Time > g.Result_Time))) {
                     @pbGhost = g;
                 }
 
-                if (S_TA_VsBestGhost && bestGhost.Result_Time > g.Result_Time) {
+                if (!nameMatches && !namePb && S_TA_VsBestGhost && (bestGhost is null || bestGhost.Result_Time > g.Result_Time)) {
                     @bestGhost = g;
                 }
             }
@@ -360,6 +373,18 @@ namespace KoBufferUI {
         if (ta_playerTime is null) @ta_playerTime = WrapPlayerCpInfo(localPlayer);
         else ta_playerTime.UpdateFrom(localPlayer);
 
+        // if the UI sequence isn't playing,
+        // then we want to show the final time of the ghost
+        // (i.e., as soon as the player finishes).
+        if (!isUiSeqPlaying) {
+            if (bestGhost !is null) crt = Math::Max(crt, bestGhost.Result_Time);
+            if (pbGhost !is null) crt = Math::Max(crt, pbGhost.Result_Time);
+            crt *= 2; // just to be sure.
+        }
+
+        if (ta_bestTime is null) @ta_bestTime = WrapBestTimes(playerName, MLFeed::GetPlayersBestTimes(playerName), crt);
+        else ta_bestTime.UpdateFrom(playerName, MLFeed::GetPlayersBestTimes(playerName), crt);
+
         if (S_TA_VsBestGhost) {
             if (ta_bestGhost is null) @ta_bestGhost = WrapGhostInfo(bestGhost, crt);
             else ta_bestGhost.UpdateFrom(bestGhost, crt);
@@ -367,7 +392,11 @@ namespace KoBufferUI {
             @ta_bestGhost = null;
         }
 
-        if (S_TA_VsPB) {
+        if (ta_pbGhost !is null && !S_TA_VsPB && ta_pbGhost.ghostName != playerName) {
+            // this might be a pb ghost if the setting was toggled. nullify it
+            @ta_pbGhost = null;
+        }
+        if (S_TA_VsBestRecentTime || S_TA_VsPB) {
             if (ta_pbGhost is null) @ta_pbGhost = WrapGhostInfo(pbGhost, crt);
             else ta_pbGhost.UpdateFrom(pbGhost, crt);
         } else {
@@ -378,10 +407,11 @@ namespace KoBufferUI {
             ( S_TA_PrioritizedType == TaBufferTimeType::YourBestTime
               && ta_pbGhost !is null
             ) ? ta_pbGhost : ta_bestGhost;
-        if (priorityGhost is null) {
-            @priorityGhost = ta_pbGhost !is null ? ta_pbGhost : ta_bestGhost;
+        if (priorityGhost is null || priorityGhost.innerResultTime == -1) {
+            // then swap
+            @priorityGhost = priorityGhost == ta_pbGhost ? ta_bestGhost : ta_pbGhost;
         }
-        if (priorityGhost is null) {
+        if (priorityGhost is null || priorityGhost.innerResultTime < 0) {
             return;
         }
 
@@ -585,6 +615,20 @@ namespace KoBufferUI {
     int oswaldMediumFont = nvg::LoadFont("fonts/OswaldMono-Medium.ttf", true, true);
     int oswaldRegularFont = nvg::LoadFont("fonts/OswaldMono-Regular.ttf", true, true);
 
+    UI::Font@ ui_mediumDisplayFont = UI::LoadFont("fonts/MontserratMono-Medium.ttf");
+    UI::Font@ ui_mediumItalicDisplayFont = UI::LoadFont("fonts/MontserratMono-MediumItalic.ttf");
+    UI::Font@ ui_semiBoldDisplayFont = UI::LoadFont("fonts/MontserratMono-SemiBold.ttf");
+    UI::Font@ ui_semiBoldItalicDisplayFont = UI::LoadFont("fonts/MontserratMono-SemiBoldItalic.ttf");
+    UI::Font@ ui_boldDisplayFont = UI::LoadFont("fonts/MontserratMono-Bold.ttf");
+    UI::Font@ ui_boldItalicDisplayFont = UI::LoadFont("fonts/MontserratMono-BoldItalic.ttf");
+
+    UI::Font@ ui_oswaldBoldFont = UI::LoadFont("fonts/OswaldMono-Bold.ttf");
+    UI::Font@ ui_oswaldSemiBoldFont = UI::LoadFont("fonts/OswaldMono-SemiBold.ttf");
+    UI::Font@ ui_oswaldLightFont = UI::LoadFont("fonts/OswaldMono-Light.ttf");
+    UI::Font@ ui_oswaldExtraLightFont = UI::LoadFont("fonts/OswaldMono-ExtraLight.ttf");
+    UI::Font@ ui_oswaldMediumFont = UI::LoadFont("fonts/OswaldMono-Medium.ttf");
+    UI::Font@ ui_oswaldRegularFont = UI::LoadFont("fonts/OswaldMono-Regular.ttf");
+
 
     enum FontChoice {
         Montserrat_Medium = 0,
@@ -614,6 +658,21 @@ namespace KoBufferUI {
         , oswaldMediumFont
         , oswaldSemiBoldFont
         , oswaldBoldFont
+        };
+
+    array<UI::Font@> ui_fontChoiceToFont =
+        { ui_mediumDisplayFont
+        , ui_mediumItalicDisplayFont
+        , ui_semiBoldDisplayFont
+        , ui_semiBoldItalicDisplayFont
+        , ui_boldDisplayFont
+        , ui_boldItalicDisplayFont
+        , ui_oswaldExtraLightFont
+        , ui_oswaldLightFont
+        , ui_oswaldRegularFont
+        , ui_oswaldMediumFont
+        , ui_oswaldSemiBoldFont
+        , ui_oswaldBoldFont
         };
 
 

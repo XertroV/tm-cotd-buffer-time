@@ -40,15 +40,76 @@ class WrapPlayerCpInfo : CPAbstraction, CPAbstractionOpCmp {
     }
 }
 
-class WrapGhostInfo : CPAbstraction, CPAbstractionOpCmp {
-    private const MLFeed::GhostInfo@ _inner;
-    int innerResultTime = -1;
-    array<uint> giCheckpoints;
-    string ghostName;
+class WrappedTimes : CPAbstraction, CPAbstractionOpCmp {
+    protected int _cpCount;
+    protected int _lastCpTime;
+    protected array<int> _cpTimes;
     int currRaceTime;
-    private int _cpCount = 0;
-    private int _lastCpTime = 0;
-    private array<int> _cpTimes;
+    int innerResultTime = -1;
+    string ghostName;
+
+    const array<int>@ get_cpTimes() const {
+        return _cpTimes;
+    }
+    int get_cpCount() const {
+        return _cpCount;
+    }
+    int get_lastCpTime() const {
+        return _lastCpTime;
+    }
+}
+
+class WrapBestTimes : WrappedTimes {
+    private array<int> _inner;
+
+    WrapBestTimes(const string &in playerName, const array<uint>@ cpInfo, int crt) {
+        currRaceTime = crt;
+        ghostName = playerName;
+        _inner.Resize(cpInfo.Length + 1);
+        _inner[0] = 0;
+        _cpCount = 0;
+        _lastCpTime = 0;
+        if (cpInfo.Length > 0)
+            innerResultTime = cpInfo[cpInfo.Length - 1];
+        for (uint i = 0; i < cpInfo.Length; i++) {
+            _inner[i+1] = cpInfo[i];
+            if (int(cpInfo[i]) < crt) {
+                _cpCount++;
+                _lastCpTime = cpInfo[i];
+            }
+        }
+        _cpTimes.Resize(_cpCount + 1);
+        for (uint i = 0; i < _cpTimes.Length; i++) {
+            _cpTimes[i] = _inner[i];
+        }
+    }
+
+    void UpdateFrom(const string &in playerName, const array<uint>@ cpInfo, int crt) {
+        currRaceTime = crt;
+        ghostName = playerName;
+        _inner.Resize(cpInfo.Length + 1);
+        _inner[0] = 0;
+        _cpCount = 0;
+        _lastCpTime = 0;
+        if (cpInfo.Length > 0)
+            innerResultTime = cpInfo[cpInfo.Length - 1];
+        for (uint i = 0; i < cpInfo.Length; i++) {
+            _inner[i+1] = cpInfo[i];
+            if (int(cpInfo[i]) < crt) {
+                _cpCount++;
+                _lastCpTime = cpInfo[i];
+            }
+        }
+        _cpTimes.Resize(_cpCount + 1);
+        for (uint i = 0; i < _cpTimes.Length; i++) {
+            _cpTimes[i] = _inner[i];
+        }
+    }
+}
+
+class WrapGhostInfo : WrappedTimes {
+    private const MLFeed::GhostInfo@ _inner;
+    array<uint> giCheckpoints;
     WrapGhostInfo(const MLFeed::GhostInfo@ ghostInfo, int crt) {
         currRaceTime = crt;
         _cpTimes.InsertLast(0);
@@ -64,15 +125,6 @@ class WrapGhostInfo : CPAbstraction, CPAbstractionOpCmp {
             _cpTimes.InsertLast(giCheckpoints[i]);
         }
         if (_cpCount > 0) _lastCpTime = giCheckpoints[_cpCount - 1];
-    }
-    const array<int>@ get_cpTimes() const {
-        return _cpTimes;
-    }
-    int get_cpCount() const {
-        return _cpCount;
-    }
-    int get_lastCpTime() const {
-        return _lastCpTime;
     }
 
     bool opEquals(const WrapGhostInfo@ other) {

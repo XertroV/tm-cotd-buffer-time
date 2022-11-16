@@ -380,6 +380,7 @@ namespace KoBufferUI {
 
     void Reset_TA() {
         @ta_playerTime = null;
+        @ta_bestTime = null;
         @ta_bestGhost = null;
         @ta_pbGhost = null;
         @priorityGhost = null;

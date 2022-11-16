@@ -73,7 +73,7 @@ float S_SecondaryTimerScale = 0.5;
 
 
 
-[Setting category="KO / COTD KO" name="Show SAFE indicator when elimination is imposible?" description="If true, when enough players DNF or disconnect, the timer will change to the SAFE indicator (99.999 green). Note: Sometimes it is not possible to avoid showing this, e.g., if a player leaves early. Currently, the extent to which this setting is honored can be improved, but never perfectly."]
+[Setting category="KO / COTD KO" name="Show SAFE indicator when elimination is impossible?" description="If true, when enough players DNF or disconnect, the timer will change to the SAFE indicator (99.999 green). Note: Sometimes it is not possible to avoid showing this, e.g., if a player leaves early. Currently, the extent to which this setting is honored can be improved, but never perfectly."]
 bool Setting_ShowSafeIndicatorEver = true;
 
 [Setting category="KO / COTD KO" name="Show OUT indicator when elimination is inevitable?" description="If true, when you're guarenteed to be knocked out, the timer will change to the OUT indicator (99.999 red)."]

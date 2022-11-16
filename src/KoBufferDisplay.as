@@ -466,9 +466,10 @@ namespace KoBufferUI {
             crt *= 2; // just to be sure.
         }
 
-        if (S_TA_VsBestRecentTime) {
-            if (ta_bestTime is null) @ta_bestTime = WrapBestTimes(playerName, MLFeed::GetPlayersBestTimes(playerName), crt);
-            else ta_bestTime.UpdateFrom(playerName, MLFeed::GetPlayersBestTimes(playerName), crt);
+        auto @playerBestTimes = MLFeed::GetPlayersBestTimes(playerName);
+        if (S_TA_VsBestRecentTime && playerBestTimes !is null && playerBestTimes.Length > 0) {
+            if (ta_bestTime is null) @ta_bestTime = WrapBestTimes(playerName, playerBestTimes, crt);
+            else ta_bestTime.UpdateFrom(playerName, playerBestTimes, crt);
         } else {
             @ta_bestTime = null;
         }

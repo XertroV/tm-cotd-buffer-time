@@ -47,7 +47,7 @@ namespace Updates {
             UI::TextWrapped("- New Font (Oswald) that matches the in-game chronometer.");
             UI::TextWrapped("- Support for Time Attack / Campaign. (Other modes possible on request.)");
             UI::TextWrapped("- Support for showing Buffer Times vs any loaded ghost. (Note: the ghost only has to be loaded once, and can then be unloaded.)");
-            UI::TextWrapped("- Support for a secondary buffer time (in TA) when two+ buffer times are avaiable. You can choose which is primary.");
+            UI::TextWrapped("- Support for a secondary buffer time (in TA) when two+ buffer times are available. You can choose which is primary.");
             UI::TextWrapped("- Settings to manage new features, including disabling during COTD qualifier.");
             UI::Separator();
 

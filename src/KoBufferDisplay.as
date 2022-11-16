@@ -262,9 +262,10 @@ namespace KoBufferUI {
                 }
                 listedPriorityGhost = listedPriorityGhost || selected;
             }
-            if (!listedPriorityGhost) {
-                UI::MenuItem(choiceLabel, "", !choiceBestGhost, false);
-            }
+            // commented: this is probs a ghost from a previous map, so not really worth showing it
+            // if (!listedPriorityGhost) {
+            //     UI::MenuItem(choiceLabel, "", !choiceBestGhost, false);
+            // }
             UI::EndMenu();
         }
         UI::Text("\\$bbb  Priority: " + WrappedTimesLabel(priorityGhost));
@@ -445,8 +446,8 @@ namespace KoBufferUI {
                 }
 
                 // chosen ghost
-                if (!nameMatches && !namePb && S_TA_VsBestGhost) {
-                    if (updateBestGhostNotChosen && (chosenGhost is null || chosenGhost.Result_Time > g.Result_Time))
+                if (S_TA_VsBestGhost) {
+                    if (updateBestGhostNotChosen && !nameMatches && !namePb && (chosenGhost is null || chosenGhost.Result_Time > g.Result_Time))
                         @chosenGhost = g;
                     else if (chosenGhost is null && g.Nickname == S_TA_GhostName && g.Result_Time == S_TA_GhostTime)
                         @chosenGhost = g;

@@ -39,3 +39,11 @@ Suggestions/feedback: @XertroV on Openplanet discord
 Code/issues: [https://github.com/XertroV/tm-cotd-buffer-time](https://github.com/XertroV/tm-cotd-buffer-time)
 
 GL HF
+
+<!--
+
+Buffer Time; Checkpoint Alternative for COTD, TA, KO, Campaign
+
+An alternative to checkpoints; shows Buffer Time compared to a reference. In COTD / KO, it shows how far you are from elimination. In TA / Solo, the reference is a ghost of your choosing, your PB, etc, and a secondary timer is available.
+
+-->

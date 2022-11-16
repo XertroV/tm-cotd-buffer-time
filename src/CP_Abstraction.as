@@ -132,7 +132,10 @@ class WrapGhostInfo : WrappedTimes {
         @_inner = ghostInfo;
         innerResultTime = ghostInfo.Result_Time;
         giCheckpoints = ghostInfo.Checkpoints;
-        ghostName = ghostInfo.Nickname;
+        if (ghostInfo.Nickname.EndsWith("Personal best"))
+            ghostName = "Personal best";
+        else
+            ghostName = ghostInfo.Nickname;
 
         for (uint i = 0; i < giCheckpoints.Length; i++) {
             if (crt > int(giCheckpoints[i])) _cpCount++;
@@ -148,7 +151,10 @@ class WrapGhostInfo : WrappedTimes {
                 @_inner = ghostInfo;
                 giCheckpoints = ghostInfo.Checkpoints;
                 innerResultTime = ghostInfo.Result_Time;
-                ghostName = ghostInfo.Nickname;
+                if (ghostInfo.Nickname.EndsWith("Personal best"))
+                    ghostName = "Personal best";
+                else
+                    ghostName = ghostInfo.Nickname;
             }
         }
         currRaceTime = crt;

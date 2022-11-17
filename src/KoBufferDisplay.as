@@ -207,6 +207,7 @@ namespace KoBuffer {
 }
 
 namespace KoBufferUI {
+    bool g_DisableTillNextGameStart = false;
 
     // const string menuIcon = Icons::ArrowsH;
     const string menuIcon = " Δt";
@@ -237,6 +238,9 @@ namespace KoBufferUI {
 
     void RenderGlobalMenuMainInner() {
         UI::Text("\\$bbb   Global Options");
+        if (UI::MenuItem("Hide Till Next Game Launch?", "", g_DisableTillNextGameStart)) {
+            g_DisableTillNextGameStart = !g_DisableTillNextGameStart;
+        }
         if (UI::MenuItem("Show Final Time?", "", S_ShowFinalTime)) {
             S_ShowFinalTime = !S_ShowFinalTime;
         }
@@ -413,6 +417,8 @@ namespace KoBufferUI {
                 ShowPreview(true);
             return;
         }
+
+        if (g_DisableTillNextGameStart) return;
 
         currSeq = KoBuffer::GetUiSequence(GetApp());
         bool isPlaying = currSeq == CGamePlaygroundUIConfig::EUISequence::Playing;

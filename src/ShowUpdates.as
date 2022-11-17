@@ -16,7 +16,8 @@ namespace Updates {
 
     void MarkAllReadOnFirstBoot() {
         if (S_Meta_FirstLoad) {
-            hasUpdates = false;
+            // don't set hasUpdates to false till a wizard/intro is implemented
+            // hasUpdates = false;
             S_Meta_FirstLoad = false;
             S_Meta_EarliestVersion = Meta::ExecutingPlugin().Version;
         }

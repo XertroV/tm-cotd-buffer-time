@@ -701,7 +701,14 @@ namespace KoBufferUI {
         if (type == TaBufferTimeType::YourBestTime) return ta_bestTime;
         if (type == TaBufferTimeType::YourPB) return ta_pbGhost;
         // todo: suspect this causes the crash
-        if (type == TaBufferTimeType::BestTimeOrPB) return (ta_pbGhost !is null && cast<WrappedTimes>(ta_pbGhost) < cast<WrappedTimes>(ta_bestTime)) ? cast<WrappedTimes>(ta_pbGhost) : ta_bestTime;
+        if (type == TaBufferTimeType::BestTimeOrPB) {
+            WrappedTimes@ pb = ta_pbGhost;
+            WrappedTimes@ bt = ta_bestTime;
+            if (pb is null) return bt;
+            if (bt is null) return pb;
+            if (pb < bt) return pb;
+            return bt;
+        }
         if (type == TaBufferTimeType::VsPlayer) return ta_vsPlayer;
         throw("SelectBasedOnType invalid type");
         return null;

@@ -18,6 +18,9 @@ namespace KoBuffer {
         if (Setting_BufferFontSize < 0.1) {
             Setting_BufferFontSize = 60 * Draw::GetHeight() / 1440;
         }
+        _S_TA_PriorPriorities[0] = S_TA_Priority1Type;
+        _S_TA_PriorPriorities[1] = S_TA_Priority2Type;
+        _S_TA_PriorPriorities[2] = S_TA_Priority3Type;
     }
 
     void MainCoro() {
@@ -459,6 +462,7 @@ namespace KoBufferUI {
     }
 
     bool UpdateGhosts() {
+        if (GetApp().RootMap is null) return false;
         auto GD = MLFeed::GetGhostData();
         if (lastNbGhosts != GD.NbGhosts) {
             lastNbGhosts = GD.NbGhosts;

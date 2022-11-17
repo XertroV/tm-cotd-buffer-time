@@ -121,30 +121,38 @@ TaBufferTimeType S_TA_Priority2Type = TaBufferTimeType::YourPB;
 TaBufferTimeType S_TA_Priority3Type = TaBufferTimeType::AgainstGhost;
 
 
-
+array<TaBufferTimeType> _S_TA_PriorPriorities = {TaBufferTimeType::YourBestTime, TaBufferTimeType::YourPB, TaBufferTimeType::AgainstGhost};
 
 
 void OnSettingsChanged_TA_EnsureCorrectPriority() {
-    // if (S_TA_Priority1Type == TaBufferTimeType::BestTimeOrPB) {
-    //     if (S_TA_Priority2Type != TaBufferTimeType::None)
-    //         S_TA_Priority2Type = TaBufferTimeType::AgainstGhost;
-    //     // S_TA_Priority3Type = TaBufferTimeType::None;
-    //     return;
-    // }
-    if (S_TA_Priority2Type == S_TA_Priority1Type) {
-        S_TA_Priority2Type = S_TA_Priority3Type;
-        S_TA_Priority3Type = TaBufferTimeType::None;
-        return;
+    int[] currentPriorities = {S_TA_Priority1Type, S_TA_Priority2Type, S_TA_Priority3Type};
+    uint changed = 0;
+    for (uint i = 0; i < 3; i++) {
+        if (currentPriorities[i] != _S_TA_PriorPriorities[i]) {
+            changed = i; break;
+        }
     }
-    // if (S_TA_Priority2Type == TaBufferTimeType::BestTimeOrPB
-    //     && S_TA_Priority1Type == TaBufferTimeType::AgainstGhost
-    // ) {
-    //     S_TA_Priority3Type = TaBufferTimeType::None;
-    //     return;
-    // }
-    if (S_TA_Priority3Type == S_TA_Priority2Type || S_TA_Priority3Type == S_TA_Priority1Type) {
-        S_TA_Priority3Type = TaBufferTimeType::None;
+
+    for (uint i = 0; i < 3; i++) {
+        if (i != changed) {
+            if (currentPriorities[changed] == _S_TA_PriorPriorities[i]) {
+                // we swap
+                currentPriorities[i] = _S_TA_PriorPriorities[changed];
+                // still the same?
+                if (currentPriorities[changed] == currentPriorities[i]) {
+                    currentPriorities[i] = TaBufferTimeType::None;
+                }
+            }
+        }
     }
+    S_TA_Priority1Type = TaBufferTimeType(currentPriorities[0]);
+    S_TA_Priority2Type = TaBufferTimeType(currentPriorities[1]);
+    S_TA_Priority3Type = TaBufferTimeType(currentPriorities[2]);
+
+    _S_TA_PriorPriorities.Resize(3);
+    _S_TA_PriorPriorities[0] = S_TA_Priority1Type;
+    _S_TA_PriorPriorities[1] = S_TA_Priority2Type;
+    _S_TA_PriorPriorities[2] = S_TA_Priority3Type;
 }
 
 

@@ -1,6 +1,11 @@
 [Setting category="Global" name="Enable?" description="Whether the timer shows up at all or not. If unchecked, the plugin will not draw anything to the screen. This is the same setting as checking/unchecking this plugin in the Scripts menu."]
 bool g_koBufferUIVisible = true;
 
+bool g_KoBufferUIHidden {
+    get { return !g_koBufferUIVisible; }
+    set { g_koBufferUIVisible = !value; }
+}
+
 [Setting category="Global" name="Show Final Time?" description="When you finish a race, your final time will be shown."]
 bool S_ShowFinalTime = true;
 

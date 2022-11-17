@@ -221,7 +221,7 @@ namespace KoBufferUI {
     }
 
     void RenderMenuMain() {
-        if (!g_koBufferUIVisible || S_HideIncrediblyUsefulMenuBarItem) return;
+        if (S_HideIncrediblyUsefulMenuBarItem) return;
         bool isShowing = false
             || (S_ShowBufferTimeInKO && KoBuffer::IsGameModeCotdKO)
             || (S_ShowBufferTimeInTA && KoBuffer::IsGameModeTA)
@@ -240,6 +240,9 @@ namespace KoBufferUI {
         UI::Text("\\$bbb   Global Options");
         if (UI::MenuItem("Hide Till Next Game Launch?", "", g_DisableTillNextGameStart)) {
             g_DisableTillNextGameStart = !g_DisableTillNextGameStart;
+        }
+        if (UI::MenuItem("Hide Altogether?", "", g_KoBufferUIHidden)) {
+            g_KoBufferUIHidden = !g_KoBufferUIHidden;
         }
         if (UI::MenuItem("Show Final Time?", "", S_ShowFinalTime)) {
             S_ShowFinalTime = !S_ShowFinalTime;

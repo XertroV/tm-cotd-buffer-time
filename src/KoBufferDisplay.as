@@ -262,26 +262,6 @@ namespace KoBufferUI {
             Setting_ShowOutIndicatorEver = !Setting_ShowOutIndicatorEver;
     }
 
-    array<const MLFeed::GhostInfo@> _ghosts;
-    uint lastNbGhosts = 0;
-
-    void UpdateGhosts() {
-        auto GD = MLFeed::GetGhostData();
-        if (lastNbGhosts != GD.NbGhosts) {
-            lastNbGhosts = GD.NbGhosts;
-            _ghosts.RemoveRange(0, _ghosts.Length);
-            dictionary seenGhosts;
-            string key;
-            for (uint i = 0; i < GD.Ghosts.Length; i++) {
-                auto item = GD.Ghosts[i];
-                key = item.Nickname + item.Result_Time;
-                if (seenGhosts.Exists(key)) continue;
-                seenGhosts[key] = true;
-                _ghosts.InsertLast(item);
-            }
-        }
-    }
-
     void RenderTaMenuMainInner() {
         UI::Text("\\$bbb  Time Attack / Campaign Options");
         if (UI::BeginMenu("Disable Buffer Time during TA")) {
@@ -426,6 +406,29 @@ namespace KoBufferUI {
             Render_TA();
     }
 
+    // track the ghosts we see and the map they're seen first on. should not be cleared.
+    dictionary ghostFirstSeenMap;
+
+    const string KeyForGhost(const MLFeed::GhostInfo@ g) {
+        return g.Nickname + (g.Checkpoints.Length << 12 ^ g.Result_Time);
+    }
+
+    const string SeenGhostSaveMap(const MLFeed::GhostInfo@ g) {
+        string key = KeyForGhost(g);
+        if (!ghostFirstSeenMap.Exists(key)) {
+            ghostFirstSeenMap[key] = GetApp().RootMap.MapInfo.MapUid;
+        }
+        return key;
+    }
+
+    const string GetGhostsMap(const MLFeed::GhostInfo@ g) {
+        string outStr;
+        if (ghostFirstSeenMap.Get(KeyForGhost(g), outStr)) {
+            return outStr;
+        }
+        return "";
+    }
+
     WrapPlayerCpInfo@ ta_playerTime;
     WrapBestTimes@ ta_bestTime;
     WrapGhostInfo@ ta_bestGhost;
@@ -436,6 +439,9 @@ namespace KoBufferUI {
     WrappedTimes@ priorityGhostRaw;
     WrappedTimes@ secondaryGhostRaw;
     WrappedTimes@ tertiaryGhostRaw;
+
+    array<const MLFeed::GhostInfo@> _ghosts;
+    uint lastNbGhosts = 0;
 
     void Reset_TA() {
         @ta_playerTime = null;
@@ -448,6 +454,28 @@ namespace KoBufferUI {
         @priorityGhostRaw = null;
         @secondaryGhostRaw = null;
         @tertiaryGhostRaw = null;
+        _ghosts.RemoveRange(0, _ghosts.Length);
+        lastNbGhosts = 0;
+    }
+
+    bool UpdateGhosts() {
+        auto GD = MLFeed::GetGhostData();
+        if (lastNbGhosts != GD.NbGhosts) {
+            lastNbGhosts = GD.NbGhosts;
+            _ghosts.RemoveRange(0, _ghosts.Length);
+            dictionary seenGhosts;
+            string key;
+            for (uint i = 0; i < GD.Ghosts.Length; i++) {
+                auto item = GD.Ghosts[i];
+                key = SeenGhostSaveMap(item);
+                if (seenGhosts.Exists(key)) continue;
+                seenGhosts[key] = true;
+                if (GetGhostsMap(item) != GetApp().RootMap.MapInfo.MapUid) continue;
+                _ghosts.InsertLast(item);
+            }
+            return true;
+        }
+        return false;
     }
 
     void Render_TA_StateDebugScreen() {
@@ -506,7 +534,7 @@ namespace KoBufferUI {
 
 
         bool isUiSeqPlaying = currSeq == CGamePlaygroundUIConfig::EUISequence::Playing;
-        bool updateGhosts = isUiSeqPlaying;
+        bool shouldUpdateGhosts = isUiSeqPlaying;
         const MLFeed::GhostInfo@ chosenGhost = null;
         // const MLFeed::GhostInfo@ bestGhost = null; // todo: mb track this too and default to it?
         const MLFeed::GhostInfo@ pbGhost = null;
@@ -514,7 +542,7 @@ namespace KoBufferUI {
 
         UpdateGhosts();
 
-        if (updateGhosts) {
+        if (shouldUpdateGhosts) {
             for (uint i = 0; i < _ghosts.Length; i++) {
                 auto g = _ghosts[i];
                 bool nameMatches = g.Nickname == playerName;
@@ -550,7 +578,7 @@ namespace KoBufferUI {
         }
 
         // don't call GetPlayersBestTimes when we're not updating ghosts to avoid loading the players best times immediately.
-        if (updateGhosts) {
+        if (shouldUpdateGhosts) {
             auto @playerBestTimes = MLFeed::GetPlayersBestTimes(playerName);
             if (S_TA_VsBestRecentTime && playerBestTimes !is null && playerBestTimes.Length > 0) {
                 if (ta_bestTime is null) @ta_bestTime = WrapBestTimes(playerName, playerBestTimes, crt, ta_playerTime.cpCount);

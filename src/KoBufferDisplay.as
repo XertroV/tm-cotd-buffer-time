@@ -241,7 +241,17 @@ namespace KoBufferUI {
         }
     }
 
+    void RenderGlobalMenuMainInner() {
+        UI::Text("\\$bbb   Global Options");
+        if (UI::MenuItem("Show Final Time?", "", S_ShowFinalTime)) {
+            S_ShowFinalTime = !S_ShowFinalTime;
+        }
+
+        UI::Separator();
+    }
+
     void RenderKoMenuMainInner() {
+        RenderGlobalMenuMainInner();
         UI::Text("\\$bbb   KO / COTD Options");
         if (UI::BeginMenu("Disable Buffer Time during KO")) {
                 bool disableNow = UI::MenuItem("Disable Now");
@@ -264,6 +274,7 @@ namespace KoBufferUI {
     }
 
     void RenderTaMenuMainInner() {
+        RenderGlobalMenuMainInner();
         UI::Text("\\$bbb  Time Attack / Campaign Options");
         if (UI::BeginMenu("Disable Buffer Time during TA")) {
                 if (KoBuffer::IsGameModeCotdQuali) {

@@ -237,7 +237,7 @@ namespace KoBufferUI {
     }
 
     void RenderGlobalMenuMainInner() {
-        UI::Text("\\$bbb   Global Options");
+        UI::Text("\\$bbb Global Options");
         if (UI::MenuItem("Hide Till Next Game Launch?", "", g_DisableTillNextGameStart)) {
             g_DisableTillNextGameStart = !g_DisableTillNextGameStart;
         }
@@ -256,7 +256,7 @@ namespace KoBufferUI {
 
     void RenderKoMenuMainInner() {
         RenderGlobalMenuMainInner();
-        UI::Text("\\$bbb   KO / COTD Options");
+        UI::Text("\\$bbb KO / COTD Options");
         if (UI::BeginMenu("Disable Buffer Time during KO")) {
                 bool disableNow = UI::MenuItem("Disable Now");
                 AddSimpleTooltip("You will need to re-enable it for KO in 'Global' settings.");
@@ -279,7 +279,7 @@ namespace KoBufferUI {
 
     void RenderTaMenuMainInner() {
         RenderGlobalMenuMainInner();
-        UI::Text("\\$bbb  Time Attack / Campaign Options");
+        UI::Text("\\$bbb Time Attack / Campaign Options");
         if (UI::BeginMenu("Disable Buffer Time during TA")) {
                 if (KoBuffer::IsGameModeCotdQuali) {
                     bool disableCotdQuali = UI::MenuItem("Disable for COTD Quali");

@@ -51,8 +51,8 @@ namespace Updates {
             UI::Separator();
 
             SubHeading("Final Time");
-            UI::TextWrapped("New Feature: Show your final time when you finish a race. Useful if you play with the HUD off. Enabled by default, can be disabled from the quick settings menu.");
-            UI::Markdown("**Default: only when the interface is hidden.**");
+            UI::TextWrapped("New Feature: Show your final time when you finish a race. Useful if you play with the HUD off. It can be disabled from the quick settings menu.");
+            UI::Markdown("**Default: show when the interface is hidden.**");
             UI::Separator();
 
             SubHeading("Bug Fixes");

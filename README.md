@@ -4,7 +4,7 @@ This plugin is will show you your current *Buffer Time* compared to a reference 
 Compatible modes: Knockout (incl COTD), Time Attack, Campaign, and more can be added in the future upon request.
 This plugin packages lore-abiding fonts that are monospaced for a pleasant visual experience.
 
-**(If this plugin does not seem to work for you, make sure you've installed MLHook and MLFeed: Race Data.)**
+**(If this plugin does not seem to work for you, make sure you've installed  _MLHook_ and _MLFeed: Race Data_.)**
 
 The reference player/ghost is contextual: in COTD KO it is the player just below the cutoff if you're ahead (and just above the cutoff if you're behind); in Time Attack it's your current best time, and/or PB, and/or a ghost of your choosing.
 

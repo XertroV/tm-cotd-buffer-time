@@ -6,7 +6,7 @@ bool g_KoBufferUIHidden {
     set { g_koBufferUIVisible = !value; }
 }
 
-[Setting category="Global" name="Show Final Time?" description="When you finish a race, your final time will be shown if UI settings match (see 'Final Time Display' tab)."]
+[Setting category="Global" name="Show Final Time?" description="When you finish a race, your final time will be shown if UI settings match (see next setting)."]
 bool S_ShowFinalTime = true;
 
 [Setting category="Global" name="Show Final TIme only when Interface Hidden?" description="The final time will show only when the interface is hidden."]

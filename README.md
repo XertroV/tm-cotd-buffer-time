@@ -29,6 +29,7 @@ If you don't, at best you'll get a polite notification and at worst you'll get a
 This plugin began as a clone of [COTD Delta time](https://openplanet.dev/plugin/cotddeltako).
 Buffer Time was written because COTD Delta time started crashing my game on the first CP (some of the time) ([github issue for PlayerState](https://github.com/thommie-echo/TMNext-PlayerState/issues/11)).
 
+Propz to @thommie for [COTD Delta time](https://openplanet.dev/plugin/cotddeltako), which was the initial inspiration for this plugin.
 
 ### 'About'-type stuff
 

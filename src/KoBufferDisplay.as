@@ -19,6 +19,7 @@ namespace KoBuffer {
         _S_TA_PriorPriorities[1] = S_TA_Priority2Type;
         _S_TA_PriorPriorities[2] = S_TA_Priority3Type;
         OnSettingsChanged();
+        startnew(Updates::MarkAllReadOnFirstBoot);
     }
 
     void MainCoro() {
@@ -286,15 +287,6 @@ namespace KoBufferUI {
             UI::EndMenu();
         }
 
-        if (UI::MenuItem("Show Vs. Ghost?", "", S_TA_VsBestGhost))
-            S_TA_VsBestGhost = !S_TA_VsBestGhost;
-
-        if (UI::MenuItem("Show Vs. Best Time?", "", S_TA_VsBestRecentTime))
-            S_TA_VsBestRecentTime = !S_TA_VsBestRecentTime;
-
-        if (UI::MenuItem("Show Vs. PB?", "", S_TA_VsPB))
-            S_TA_VsPB = !S_TA_VsPB;
-
         if (UI::MenuItem("Show Two Buf. Times?", "", S_TA_ShowTwoBufferTimes))
             S_TA_ShowTwoBufferTimes = !S_TA_ShowTwoBufferTimes;
 
@@ -345,11 +337,10 @@ namespace KoBufferUI {
         }
 
         auto localPlay = GetApp().PlaygroundScript !is null;
-        auto cp = GetApp().CurrentPlayground;
-        bool enabled = !localPlay && cp !is null;
-        uint nbPlayers = enabled ? cp.Players.Length : 1;
+        bool enabled = !localPlay && GetApp().CurrentPlayground !is null;
+        auto rd = MLFeed::GetRaceData();
+        uint nbPlayers = rd.SortedPlayers_TimeAttack.Length;
         if (UI::BeginMenu("Vs. Player Choice:  \\$bbb("+nbPlayers+")", enabled)) {
-            auto rd = MLFeed::GetRaceData();
             string playersTime;
             const MLFeed::PlayerCpInfo@ playerInfo;
             for (uint i = 0; i < rd.SortedPlayers_TimeAttack.Length; i++) {
@@ -357,9 +348,9 @@ namespace KoBufferUI {
                 bool selected = S_TA_VsPlayerName == item.name;
                 @playerInfo = rd.GetPlayer(item.name);
                 if (playerInfo is null) continue;
-                bool enabled = playerInfo.bestTime > 0;
-                playersTime = !enabled ? "" : Time::Format(Math::Max(playerInfo.bestTime, 0));
-                if (UI::MenuItem(item.name, playersTime, selected, enabled)) {
+                bool piEnabled = playerInfo.bestTime > 0;
+                playersTime = !piEnabled ? "" : Time::Format(Math::Max(playerInfo.bestTime, 0));
+                if (UI::MenuItem(item.name, playersTime, selected, piEnabled)) {
                     S_TA_VsPlayerName = item.name;
                 }
             }
@@ -437,7 +428,7 @@ namespace KoBufferUI {
             return;
         }
 
-        if (S_ShowFinalTime && (isFinish || (isPlaying && ta_playerTime !is null && ta_playerTime.cpCount == MLFeed::GetRaceData().CPsToFinish))) {
+        if (S_ShowFinalTime && (isFinish || (isPlaying && ta_playerTime !is null && uint(ta_playerTime.cpCount) == MLFeed::GetRaceData().CPsToFinish))) {
             RenderFinalTime();
         }
 
@@ -582,8 +573,6 @@ namespace KoBufferUI {
         auto localPlayer = raceData.GetPlayer(playerName);
         if (localPlayer is null) return;
 
-        if (!S_TA_VsBestGhost && !S_TA_VsBestRecentTime && !S_TA_VsPB) return;
-
 
         bool isUiSeqPlaying = currSeq == CGamePlaygroundUIConfig::EUISequence::Playing;
         bool shouldUpdateGhosts = isUiSeqPlaying;
@@ -601,19 +590,17 @@ namespace KoBufferUI {
                 bool namePb = g.Nickname.EndsWith("Personal best");
 
                 // pb ghost
-                bool checkGhostForPb = !isSpectating && S_TA_VsPB && (nameMatches || namePb);
+                bool checkGhostForPb = !isSpectating && (nameMatches || namePb);
                 // look for best pb ghost
                 if (checkGhostForPb && (pbGhost is null || (pbGhost.Result_Time > g.Result_Time))) {
                     @pbGhost = g;
                 }
 
                 // chosen ghost
-                if (S_TA_VsBestGhost) {
-                    if (updateBestGhostNotChosen && !nameMatches && !namePb && (chosenGhost is null || chosenGhost.Result_Time > g.Result_Time))
-                        @chosenGhost = g;
-                    else if (chosenGhost is null && g.Nickname == S_TA_GhostName && g.Result_Time == S_TA_GhostTime)
-                        @chosenGhost = g;
-                }
+                if (updateBestGhostNotChosen && !nameMatches && !namePb && (chosenGhost is null || chosenGhost.Result_Time > g.Result_Time))
+                    @chosenGhost = g;
+                else if (chosenGhost is null && g.Nickname == S_TA_GhostName && g.Result_Time == S_TA_GhostTime)
+                    @chosenGhost = g;
             }
         }
 
@@ -640,7 +627,7 @@ namespace KoBufferUI {
         // don't call GetPlayersBestTimes when we're not updating ghosts to avoid loading the players best times immediately.
         if (shouldUpdateGhosts) {
             auto @playerBestTimes = MLFeed::GetPlayersBestTimes(playerName);
-            if (S_TA_VsBestRecentTime && playerBestTimes !is null && playerBestTimes.Length > 0) {
+            if (playerBestTimes !is null && playerBestTimes.Length > 0) {
                 if (ta_bestTime is null) @ta_bestTime = WrapBestTimes(playerName, playerBestTimes, crt, ta_playerTime.cpCount);
                 else ta_bestTime.UpdateFrom(playerName, playerBestTimes, crt, ta_playerTime.cpCount);
             } else {
@@ -651,14 +638,10 @@ namespace KoBufferUI {
             ta_bestTime.UpdateFromCRT(crt, ta_playerTime.cpCount);
         }
 
-        if (S_TA_VsBestGhost) {
-            if (ta_bestGhost is null) @ta_bestGhost = WrapGhostInfo(chosenGhost, crt, ta_playerTime.cpCount);
-            else ta_bestGhost.UpdateFrom(chosenGhost, crt, ta_playerTime.cpCount);
-        } else {
-            @ta_bestGhost = null;
-        }
+        if (ta_bestGhost is null) @ta_bestGhost = WrapGhostInfo(chosenGhost, crt, ta_playerTime.cpCount);
+        else ta_bestGhost.UpdateFrom(chosenGhost, crt, ta_playerTime.cpCount);
 
-        if (S_TA_VsPB && !isSpectating) {
+        if (!isSpectating) {
             if (ta_pbGhost is null) @ta_pbGhost = WrapGhostInfo(pbGhost, crt, ta_playerTime.cpCount);
             else ta_pbGhost.UpdateFrom(pbGhost, crt, ta_playerTime.cpCount);
         } else {

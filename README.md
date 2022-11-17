@@ -44,7 +44,7 @@ Buffer Time; Checkpoint Alternative for COTD, TA, KO, Campaign
 An alternative to checkpoints; shows Buffer Time compared to a reference. In COTD / KO, it shows how far you are from elimination. In TA / Solo, the reference is a ghost of your choosing, your PB, etc, and a secondary timer is available.
 
 - tmp disable option?
-- reference: best time on server?
+- [done] reference: best time on server?
 - [done] track priority choices and auto repopulate better
 - [done] fix PB ghost issue in Solo?
 - [done] show final time

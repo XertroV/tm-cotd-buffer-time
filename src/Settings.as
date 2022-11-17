@@ -121,27 +121,6 @@ bool Setting_SafeIndicatorInNoKO = true;
 
 
 
-[Setting category="TA / Solo" name="Show Compared to Ghost?" description="If true, a buffer time will be displayed relative to the best ghost (or one of your choosing) that was loaded at any point since the map was loaded. (The ghost can be unloaded immediately if you want.)"]
-bool S_TA_VsBestGhost = true;
-
-[Setting category="TA / Solo" name="Show Compared to Best Time?" description="If true, a buffer time will be displayed relative to your best time set on the server this session/round."]
-bool S_TA_VsBestRecentTime = true;
-
-[Setting category="TA / Solo" name="Show Comapred to Personal Bests?" description="If true, a buffer time will be displayed relative to your PB ghost when available, or the best ghost with your user name."]
-bool S_TA_VsPB = true;
-
-[Setting category="TA / Solo" name="Show two buffer times?" description="If true, when both of the above options are selected, a smaller buffer time will be shown beneath/above the first. (The larger one is the one with priority.)"]
-bool S_TA_ShowTwoBufferTimes = true;
-
-[Setting category="TA / Solo" name="Show during COTD Qualifier?" description="If true, the buffer time will be visible during COTD qualifier. Otherwise, it will be hidden."]
-bool S_TA_ShowDuringCotdQuali = true;
-
-[Setting category="TA / Solo" name="Hide when Spectating?" description="When spectating, the buffer time shown will be a comparison to your PB or the best ghost, depending on priority."]
-bool S_TA_HideWhenSpectating = false;
-
-[Setting category="TA / Solo" name="Update Timer Immediately?" description="By default, the buffer time will act as though you're in a live match -- you won't know a ghost hit a CP until it would if it were live. With this setting enabled, deltas will be shown instantly when you are leading and hit a new CP (this is roughly how checkpoint splits normally work)."]
-bool S_TA_UpdateTimerImmediately = false;
-
 const uint NbTaBufferTimeTypes = 6;
 enum TaBufferTimeType {
     None, VsGhost, BestTimeOrPB, YourBestTime, YourPB, VsPlayer
@@ -155,6 +134,18 @@ TaBufferTimeType S_TA_Priority2Type = TaBufferTimeType::YourPB;
 
 [Setting category="TA / Solo" name="Tertiary Buffer Time" description="When three buffer times are available, which one should be prioritized third? Note: it will not show up unless one of the high priority timers cannot be shown or is a duplicate."]
 TaBufferTimeType S_TA_Priority3Type = TaBufferTimeType::VsGhost;
+
+[Setting category="TA / Solo" name="Show two buffer times?" description="If true, when both of the above options are selected, a smaller buffer time will be shown beneath/above the first. (The larger one is the one with priority.)"]
+bool S_TA_ShowTwoBufferTimes = true;
+
+[Setting category="TA / Solo" name="Show during COTD Qualifier?" description="If true, the buffer time will be visible during COTD qualifier. Otherwise, it will be hidden."]
+bool S_TA_ShowDuringCotdQuali = true;
+
+[Setting category="TA / Solo" name="Hide when Spectating?" description="When spectating, the buffer time shown will be a comparison to your PB or the best ghost, depending on priority."]
+bool S_TA_HideWhenSpectating = false;
+
+[Setting category="TA / Solo" name="Update Timer Immediately?" description="By default, the buffer time will act as though you're in a live match -- you won't know a ghost hit a CP until it would if it were live. With this setting enabled, deltas will be shown instantly when you are leading and hit a new CP (this is roughly how checkpoint splits normally work)."]
+bool S_TA_UpdateTimerImmediately = false;
 
 
 array<TaBufferTimeType> _S_TA_PriorPriorities = {TaBufferTimeType::YourBestTime, TaBufferTimeType::YourPB, TaBufferTimeType::VsGhost};
@@ -200,16 +191,37 @@ void OnSettingsChanged_TA_EnsureCorrectPriority() {
 [Setting category="Updates"]
 bool S_News_Viewed_2022_11_15 = false;
 
+[Setting category="Updates"]
+bool S_News_Viewed_2022_11_18 = false;
 
 
-/* dev stuff */
 
+/* debug stuff */
 
-#if SIG_DEVELOPER
-#endif
 
 [Setting category="Debug Screens" name="KO: Show All Players' Deltas" description="When checked a window will appear (if the interface is on) that shows all deltas for the current game (regardless of whether it's KO or not)."]
 bool S_ShowAllInfoDebug = false;
 
 [Setting category="Debug Screens" name="Show TA State Debug" description="Shows which reference ghosts/times are used atm."]
 bool S_ShowDebug_TA_State = false;
+
+
+
+/* meta state, e.g., first load, wizard, etc */
+
+
+
+#if SIG_DEVELOPER
+[Setting category="Hidden"]
+#else
+[Setting hidden]
+#endif
+bool S_Meta_FirstLoad = true;
+
+// What version were we when the user first installed the plugin
+#if SIG_DEVELOPER
+[Setting category="Hidden"]
+#else
+[Setting hidden]
+#endif
+string S_Meta_EarliestVersion;

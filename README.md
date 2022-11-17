@@ -18,6 +18,12 @@ This plugin can function as a replacement for checkpoint splits all together in 
 
 If you don't, at best you'll get a polite notification and at worst you'll get a compile error.
 
+### In The Wild
+
+* [AR_Down explains COTD Buffer Time](https://www.twitch.tv/ar_down/clip/ArborealStrongFungusVoHiYo-3zeYG5yvTMo7DS8W)
+* [jnic explains COTD Buffer Time](https://clips.twitch.tv/InspiringObeseMetalRiPepperonis-dUKDhfWPNZ7dYoKa)
+* [jnic discovers the joys of UI off + Buffer Time](https://clips.twitch.tv/MagnificentSparklingFlamingoBrokeBack-79RXx6-B5ZA7MATl)
+
 ### Before Version 2
 
 This plugin began as a clone of [COTD Delta time](https://openplanet.dev/plugin/cotddeltako).

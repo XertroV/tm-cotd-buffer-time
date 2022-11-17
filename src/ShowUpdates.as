@@ -44,13 +44,14 @@ namespace Updates {
         Heading("v2.1");
         UI::Dummy(vec2(10, 0));
         UI::SameLine();
-        if (UI::BeginChild("news-2022_11_18", vec2(_childWidth, 340))) {
+        if (UI::BeginChild("news-2022_11_18", vec2(_childWidth, 360))) {
             SubHeading("Vs. Player");
             UI::TextWrapped("New Feature: set another player's best race times as a reference target. This is not their PB, just their best times set this session.");
             UI::Separator();
 
             SubHeading("Final Time");
             UI::TextWrapped("New Feature: Show your final time when you finish a race. Useful if you play with the HUD off. Enabled by default, can be disabled from the quick settings menu.");
+            UI::Markdown("**Default: only when the interface is hidden.**");
             UI::Separator();
 
             SubHeading("Bug Fixes");

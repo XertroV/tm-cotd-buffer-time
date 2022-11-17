@@ -1,12 +1,6 @@
 const float TAU = 6.283185307179586;
 
 namespace KoBuffer {
-/* bugs:
-- when at 0, no behind shows up even if it should:
-  d = RaceTime - ahead.lastCP
-  nb: racetime here is sorta the curr pos of the ahead car
-
-*/
     void Main() {
         dev_trace("KoBuffer::Main");
         startnew(InitCoro);
@@ -42,6 +36,7 @@ namespace KoBuffer {
         }
     }
 
+    // does not work
     void OnLocalFixPbGhost() {
         // while (GetApp().PlaygroundScript is null) yield();
         // try {
@@ -193,14 +188,14 @@ namespace KoBuffer {
         // return Math::Abs(gameTime - startTime);  // when formatting via Time::Format, negative ints don't work.
     }
 
-    // a hacky way to tell if the interface is hidden
-    bool IsInterfaceHidden(CGameCtnApp@ app) {
-        try {
-            return Get_ControlledPlayer_ScriptAPI(app).CurrentRaceTime != GetCurrentRaceTime(app);
-        } catch {
-            return false;
-        }
-    }
+    // // a hacky way to tell if the interface is hidden
+    // bool IsInterfaceHidden(CGameCtnApp@ app) {
+    //     try {
+    //         return Get_ControlledPlayer_ScriptAPI(app).CurrentRaceTime != GetCurrentRaceTime(app);
+    //     } catch {
+    //         return false;
+    //     }
+    // }
 
     CGamePlaygroundUIConfig::EUISequence GetUiSequence(CGameCtnApp@ app) {
         try {
@@ -244,6 +239,9 @@ namespace KoBufferUI {
         UI::Text("\\$bbb   Global Options");
         if (UI::MenuItem("Show Final Time?", "", S_ShowFinalTime)) {
             S_ShowFinalTime = !S_ShowFinalTime;
+        }
+        if (UI::MenuItem("Final Time only when UI Hidden?", "", S_FT_OnlyWhenInterfaceHidden)) {
+            S_FT_OnlyWhenInterfaceHidden = !S_FT_OnlyWhenInterfaceHidden;
         }
 
         UI::Separator();
@@ -422,7 +420,8 @@ namespace KoBufferUI {
         bool isEndRound = currSeq != CGamePlaygroundUIConfig::EUISequence::EndRound;
         bool skipSequence = !isPlaying && !isFinish && !isEndRound;
         if (!g_koBufferUIVisible || skipSequence
-            || (S_ShowOnlyWhenInterfaceHidden && !KoBuffer::IsInterfaceHidden(GetApp()))
+            || (S_ShowOnlyWhenInterfaceHidden && UI::IsGameUIVisible())
+            || (S_ShowOnlyWhenInterfaceVisible && !UI::IsGameUIVisible())
         ) {
             Reset_TA();
             return;
@@ -604,6 +603,11 @@ namespace KoBufferUI {
             }
         }
 
+        // if we fail to get a chosen ghost, reset to best ghost.
+        if (updateBestGhostNotChosen && chosenGhost is null) {
+            S_TA_GhostChoice = GhostChoice::BestGhost;
+        }
+
         if (ta_playerTime is null) @ta_playerTime = WrapPlayerCpInfo(localPlayer);
         else ta_playerTime.UpdateFrom(localPlayer);
 
@@ -696,6 +700,7 @@ namespace KoBufferUI {
         if (type == TaBufferTimeType::VsGhost) return ta_bestGhost;
         if (type == TaBufferTimeType::YourBestTime) return ta_bestTime;
         if (type == TaBufferTimeType::YourPB) return ta_pbGhost;
+        // todo: suspect this causes the crash
         if (type == TaBufferTimeType::BestTimeOrPB) return (ta_pbGhost !is null && cast<WrappedTimes>(ta_pbGhost) < cast<WrappedTimes>(ta_bestTime)) ? cast<WrappedTimes>(ta_pbGhost) : ta_bestTime;
         if (type == TaBufferTimeType::VsPlayer) return ta_vsPlayer;
         throw("SelectBasedOnType invalid type");
@@ -747,6 +752,9 @@ namespace KoBufferUI {
         }
 
         if (localPlayer is null) return;
+
+        if (ta_playerTime is null) @ta_playerTime = WrapPlayerCpInfo(localPlayer);
+        else ta_playerTime.UpdateFrom(localPlayer);
 
         auto bufferTime = CalcBufferTime_KO(theHook, koFeedHook, preCpInfo, postCpInfo, localPlayer, postCutoffRank, true);
         if (bufferTime.isOut && Setting_ShowOutIndicatorEver) {
@@ -1022,6 +1030,7 @@ namespace KoBufferUI {
                 ts = uint(ta_playerTime.lastCpTime);
             toDraw = Time::Format(ts, true, true);
         } else {
+            if (S_FT_OnlyWhenInterfaceHidden && UI::IsGameUIVisible()) return;
             if (ta_playerTime is null) return;
             uint finalTime = uint(ta_playerTime.lastCpTime);
             toDraw = Time::Format(finalTime);

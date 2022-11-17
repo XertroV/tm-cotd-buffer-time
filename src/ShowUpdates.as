@@ -61,7 +61,7 @@ namespace Updates {
             UI::TextWrapped("- PB times in Solo mode now auto-populate correctly.");
             UI::TextWrapped("- Better organize TA quick settings menu.");
             UI::TextWrapped("- Big render time improvement in TA.");
-            UI::TextWrapped("- Fix: timer wouldn't used to show if there were 0 ghosts loaded.");
+            UI::TextWrapped("- Fix: timer wouldn't show if there were 0 ghosts.");
             UI::TextWrapped("- Fix: duplicate ghosts in menu selection.");
             UI::TextWrapped("- Fix: crash when selecting 'BestTimeOrPB'.");
         }

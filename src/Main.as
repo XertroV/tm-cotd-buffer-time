@@ -11,6 +11,7 @@ void Main() {
         print("buffer time starting.");
         startnew(KoBuffer::Main);
     } else {
+        sleep(3000); // plugin manager will reload improperly if updates happen simultaneously
         if (!depMLHook) {
             NotifyDepError("Requires MLHook");
         } else if (!depMLFeed) {

@@ -9,6 +9,9 @@ bool g_KoBufferUIHidden {
 [Setting category="Global" name="Show Final Time?" description="When you finish a race, your final time will be shown if UI settings match (see 'Final Time Display' tab)."]
 bool S_ShowFinalTime = true;
 
+[Setting category="Global" name="Show Final TIme only when Interface Hidden?" description="The final time will show only when the interface is hidden."]
+bool S_FT_OnlyWhenInterfaceHidden = true;
+
 [Setting category="Global" name="Show Buffer Time during TA / Solo?"]
 bool S_ShowBufferTimeInTA = true;
 
@@ -86,9 +89,6 @@ float S_SecondaryTimerScale = 0.5;
 
 [Setting category="Final Time Display" name="Preview?" description="This will show a preview of what it will look like when your final time is shown."]
 bool S_ShowFinalTime_Preview = false;
-
-[Setting category="Final Time Display" name="Show only when Interface Hidden?" description="The final time will show only when the interface is hidden."]
-bool S_FT_OnlyWhenInterfaceHidden = true;
 
 [Setting category="Final Time Display" name="Display Position" description="Origin: Top left. Values: Proportion of screen (range: 0-100%; default: (75, 25))" drag]
 vec2 S_FT_DisplayPosition = vec2(75, 25);

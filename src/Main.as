@@ -30,6 +30,7 @@ void _Unload() {
 void Render() {
     Updates::Render();
     KoBufferUI::Render();
+    KoBufferUI::Render_TA_StateDebugScreen();
 }
 
 void RenderInterface() {

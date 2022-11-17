@@ -162,6 +162,10 @@ bool S_News_Viewed_2022_11_15 = false;
 
 
 #if SIG_DEVELOPER
-    [Setting category="KO Extra/Debug" name="Show All Players' Deltas" description="When checked a window will appear (if the interface is on) that shows all deltas for the current game (regardless of whether it's KO or not)."]
 #endif
-    bool S_ShowAllInfoDebug = false;
+
+[Setting category="Debug Screens" name="KO: Show All Players' Deltas" description="When checked a window will appear (if the interface is on) that shows all deltas for the current game (regardless of whether it's KO or not)."]
+bool S_ShowAllInfoDebug = false;
+
+[Setting category="Debug Screens" name="Show TA State Debug" description="Shows which reference ghosts/times are used atm."]
+bool S_ShowDebug_TA_State = false;

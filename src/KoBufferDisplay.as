@@ -25,6 +25,7 @@ namespace KoBuffer {
         while (true) {
             yield();
             CheckGMChange();
+            CheckMapChange();
         }
     }
 
@@ -33,8 +34,48 @@ namespace KoBuffer {
         if (CurrentGameMode != lastGM) {
             lastGM = CurrentGameMode;
             dev_trace("Set game mode: " + lastGM);
-            // if (IsGameModeCotdKO) {
-            // }
+            KoBufferUI::Reset_TA();
+            if (lastGM == "TM_Campaign_Local")
+                startnew(OnLocalFixPbGhost);
+        }
+    }
+
+    void OnLocalFixPbGhost() {
+        // while (GetApp().PlaygroundScript is null) yield();
+        // try {
+        //     uint waitMax = Time::Now + 20000;
+        //     auto @ps_dfm = GetApp().PlaygroundScript.DataFileMgr;
+        //     while (ps_dfm is null && Time::Now < waitMax) {
+        //         yield();
+        //         @ps_dfm = GetApp().PlaygroundScript.DataFileMgr;
+        //     }
+        //     while (Time::Now < waitMax) {
+        //         yield();
+        //         if (ps_dfm.Ghosts.Length > 0)
+        //             break;
+        //     }
+        //     if (Time::Now >= waitMax) {
+        //         // waited too long, assume no ghosts
+        //         return;
+        //     }
+        //     // add ghosts from ps_dfm to net.cmap.dfm
+        //     for (uint i = 0; i < ps_dfm.Ghosts.Length; i++) {
+        //         auto item = ps_dfm.Ghosts[i];
+        //         GetApp().Network.ClientManiaAppPlayground.DataFileMgr.Ghosts.Add(item);
+        //     }
+        //     // auto ghost0 = ps_dfm.Ghosts[0];
+        //     return;
+        // } catch {
+        //     warn("Excepting trying to fix local ghost: " + getExceptionInfo());
+        // }
+    }
+
+    string lastMap;
+    void CheckMapChange() {
+        string newMap = GetApp().RootMap is null ? "" : GetApp().RootMap.MapInfo.MapUid;
+        if (newMap != lastMap) {
+            lastMap = newMap;
+            KoBufferUI::Reset_TA();
         }
     }
 
@@ -235,8 +276,11 @@ namespace KoBufferUI {
             UI::EndMenu();
         }
         UI::Separator();
-        UI::Text("\\$bbb  Current Ghosts:");
-        string choiceLabel = FormatNameAndTime(S_TA_GhostName, S_TA_GhostTime);
+        UI::Text("\\$bbb Current References:");
+        UI::Text("\\$bbb  Priority: " + WrappedTimesLabel(priorityGhostRaw));
+        UI::Text("\\$bbb  Secondary: " + WrappedTimesLabel(secondaryGhostRaw));
+        UI::Text("\\$bbb  Tertiary: " + WrappedTimesLabel(tertiaryGhostRaw));
+
         if (UI::BeginMenu("Ghost Choice:")) {
             bool choiceBestGhost = S_TA_GhostChoice == GhostChoice::BestGhost;
             if (UI::MenuItem("Best Ghost", "", choiceBestGhost)) {
@@ -244,7 +288,6 @@ namespace KoBufferUI {
             }
             auto GD = MLFeed::GetGhostData();
             bool listedPriorityGhost = false;
-            // string localPlayerName = KoBuffer::Get_GameTerminal_ControlledPlayer_UserName(GetApp());
             dictionary seenGhosts;
             string key;
             for (uint i = 0; i < GD.Ghosts.Length; i++) {
@@ -253,8 +296,6 @@ namespace KoBufferUI {
                 if (seenGhosts.Exists(key)) continue;
                 seenGhosts[key] = true;
                 bool selected = item.Result_Time == S_TA_GhostTime && item.Nickname == S_TA_GhostName;
-                // if (item.Nickname == localPlayerName || item.Nickname.EndsWith("Personal best"))
-                //     continue;  // we handle player ghosts separately
                 if (UI::MenuItem(GhostInfoLabel(item), "", selected && !choiceBestGhost)) {
                     S_TA_GhostChoice = GhostChoice::NamedGhost;
                     S_TA_GhostName = item.Nickname;
@@ -262,15 +303,8 @@ namespace KoBufferUI {
                 }
                 listedPriorityGhost = listedPriorityGhost || selected;
             }
-            // commented: this is probs a ghost from a previous map, so not really worth showing it
-            // if (!listedPriorityGhost) {
-            //     UI::MenuItem(choiceLabel, "", !choiceBestGhost, false);
-            // }
             UI::EndMenu();
         }
-        UI::Text("\\$bbb  Priority: " + WrappedTimesLabel(priorityGhost));
-        UI::Text("\\$bbb  Secondary: " + WrappedTimesLabel(secondaryGhost));
-        UI::Text("\\$bbb  Tertiary: " + WrappedTimesLabel(tertiaryGhost));
 
         UI::Separator();
 
@@ -389,6 +423,9 @@ namespace KoBufferUI {
     WrappedTimes@ priorityGhost;
     WrappedTimes@ secondaryGhost;
     WrappedTimes@ tertiaryGhost;
+    WrappedTimes@ priorityGhostRaw;
+    WrappedTimes@ secondaryGhostRaw;
+    WrappedTimes@ tertiaryGhostRaw;
 
     void Reset_TA() {
         @ta_playerTime = null;
@@ -398,6 +435,33 @@ namespace KoBufferUI {
         @priorityGhost = null;
         @secondaryGhost = null;
         @tertiaryGhost = null;
+        @priorityGhostRaw = null;
+        @secondaryGhostRaw = null;
+        @tertiaryGhostRaw = null;
+    }
+
+    void Render_TA_StateDebugScreen() {
+        if (!S_ShowDebug_TA_State) return;
+        UI::SetNextWindowSize(400, 400, UI::Cond::Appearing);
+        if (UI::Begin(Meta::ExecutingPlugin().Name + " - TA Debug", S_ShowDebug_TA_State)) {
+            DrawDebug_WrappedTimes("ta_playerTime", ta_playerTime);
+            DrawDebug_WrappedTimes("ta_bestTime", ta_bestTime);
+            DrawDebug_WrappedTimes("ta_bestGhost", ta_bestGhost);
+            DrawDebug_WrappedTimes("ta_pbGhost", ta_pbGhost);
+            UI::Separator();
+            DrawDebug_WrappedTimes("priorityGhostRaw", priorityGhostRaw);
+            DrawDebug_WrappedTimes("secondaryGhostRaw", secondaryGhostRaw);
+            DrawDebug_WrappedTimes("tertiaryGhostRaw", tertiaryGhostRaw);
+            UI::Separator();
+            DrawDebug_WrappedTimes("priorityGhost", priorityGhost);
+            DrawDebug_WrappedTimes("secondaryGhost", secondaryGhost);
+            DrawDebug_WrappedTimes("tertiaryGhost", tertiaryGhost);
+        }
+        UI::End();
+    }
+
+    void DrawDebug_WrappedTimes(const string &in name, CPAbstraction@ wt) {
+        UI::Text(name + ": " + (wt is null ? "null" :  wt.ToString()));
     }
 
     enum GhostChoice {
@@ -419,7 +483,6 @@ namespace KoBufferUI {
         auto crt = KoBuffer::GetCurrentRaceTime(GetApp());
 
         auto ghostData = MLFeed::GetGhostData();
-        if (ghostData.NbGhosts == 0) return; // we need a ghost to get times from
         auto raceData = MLFeed::GetRaceData();
         auto playerName = KoBuffer::Get_GameTerminal_Player_UserName(GetApp());
         auto physicalPlayersName = KoBuffer::Get_GameTerminal_ControlledPlayer_UserName(GetApp());
@@ -435,6 +498,7 @@ namespace KoBufferUI {
         bool isUiSeqPlaying = currSeq == CGamePlaygroundUIConfig::EUISequence::Playing;
         bool updateGhosts = isUiSeqPlaying;
         const MLFeed::GhostInfo@ chosenGhost = null;
+        // const MLFeed::GhostInfo@ bestGhost = null; // todo: mb track this too and default to it?
         const MLFeed::GhostInfo@ pbGhost = null;
         bool updateBestGhostNotChosen = S_TA_GhostChoice == GhostChoice::BestGhost;
 
@@ -473,12 +537,18 @@ namespace KoBufferUI {
             crt *= 2; // just to be sure.
         }
 
-        auto @playerBestTimes = MLFeed::GetPlayersBestTimes(playerName);
-        if (S_TA_VsBestRecentTime && playerBestTimes !is null && playerBestTimes.Length > 0) {
-            if (ta_bestTime is null) @ta_bestTime = WrapBestTimes(playerName, playerBestTimes, crt, ta_playerTime.cpCount);
-            else ta_bestTime.UpdateFrom(playerName, playerBestTimes, crt, ta_playerTime.cpCount);
-        } else {
-            @ta_bestTime = null;
+        // don't call GetPlayersBestTimes when we're not updating ghosts to avoid loading the players best times immediately.
+        if (updateGhosts) {
+            auto @playerBestTimes = MLFeed::GetPlayersBestTimes(playerName);
+            if (S_TA_VsBestRecentTime && playerBestTimes !is null && playerBestTimes.Length > 0) {
+                if (ta_bestTime is null) @ta_bestTime = WrapBestTimes(playerName, playerBestTimes, crt, ta_playerTime.cpCount);
+                else ta_bestTime.UpdateFrom(playerName, playerBestTimes, crt, ta_playerTime.cpCount);
+            } else {
+                @ta_bestTime = null;
+            }
+        } else if (ta_bestTime !is null && !ta_bestTime.IsEmpty) {
+            // update without providing new CPs
+            ta_bestTime.UpdateFromCRT(crt, ta_playerTime.cpCount);
         }
 
         if (S_TA_VsBestGhost) {
@@ -495,12 +565,19 @@ namespace KoBufferUI {
             @ta_pbGhost = null;
         }
 
-        @priorityGhost = SelectBasedOnType(S_TA_Priority1Type, ta_bestGhost, ta_bestTime, ta_pbGhost);
-        @secondaryGhost = SelectBasedOnType(S_TA_Priority2Type, ta_bestGhost, ta_bestTime, ta_pbGhost);
-        @tertiaryGhost = SelectBasedOnType(S_TA_Priority3Type, ta_bestGhost, ta_bestTime, ta_pbGhost);
+        @priorityGhostRaw = SelectBasedOnType(S_TA_Priority1Type, ta_bestGhost, ta_bestTime, ta_pbGhost);
+        @secondaryGhostRaw = SelectBasedOnType(S_TA_Priority2Type, ta_bestGhost, ta_bestTime, ta_pbGhost);
+        @tertiaryGhostRaw = SelectBasedOnType(S_TA_Priority3Type, ta_bestGhost, ta_bestTime, ta_pbGhost);
+        @priorityGhost = priorityGhostRaw;
+        @secondaryGhost = secondaryGhostRaw;
+        @tertiaryGhost = tertiaryGhostRaw;
 
         if (priorityGhost is null || priorityGhost.IsEmpty) {
             if (secondaryGhost is null || secondaryGhost.IsEmpty) {
+                if (tertiaryGhost is null || tertiaryGhost.IsEmpty) {
+                    // 3 reference ghosts that are null/empty
+                    return;
+                }
                 @priorityGhost = tertiaryGhost;
                 @tertiaryGhost = null;
             } else {

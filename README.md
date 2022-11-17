@@ -4,7 +4,9 @@ This plugin is will show you your current *Buffer Time* compared to a reference 
 Compatible modes: Knockout (incl COTD), Time Attack, Campaign, and more can be added in the future upon request.
 This plugin packages lore-abiding fonts that are monospaced for a pleasant visual experience.
 
-The reference player/ghost is contextual: in COTD KO it is the player just below the cutoff if you're ahead (and just above the cutoff if you're behind); in Time Attack it's your current ghost and/or the best ghost that you've viewed.
+**(If this plugin does not seem to work for you, make sure you've installed MLHook and MLFeed: Race Data.)**
+
+The reference player/ghost is contextual: in COTD KO it is the player just below the cutoff if you're ahead (and just above the cutoff if you're behind); in Time Attack it's your current best time, and/or PB, and/or a ghost of your choosing.
 
 In some modes (like TA/Campaign), a secondary buffer time can optionally be shown as well.
 This means you can see your current progress compared to both your PB and the WR at the same time.
@@ -22,12 +24,6 @@ This plugin began as a clone of [COTD Delta time](https://openplanet.dev/plugin/
 Buffer Time was written because COTD Delta time started crashing my game on the first CP (some of the time) ([github issue for PlayerState](https://github.com/thommie-echo/TMNext-PlayerState/issues/11)).
 
 
-todo:
-- wizard
-  - fonts
-  - COTD/KO settings
-  - TA/Campaign settings
-
 ### 'About'-type stuff
 
 License: Public Domain
@@ -40,10 +36,17 @@ Code/issues: [https://github.com/XertroV/tm-cotd-buffer-time](https://github.com
 
 GL HF
 
+
 <!--
 
 Buffer Time; Checkpoint Alternative for COTD, TA, KO, Campaign
 
 An alternative to checkpoints; shows Buffer Time compared to a reference. In COTD / KO, it shows how far you are from elimination. In TA / Solo, the reference is a ghost of your choosing, your PB, etc, and a secondary timer is available.
+
+- tmp disable option?
+- reference: best time on server?
+- track priority choices and auto repopulate better
+- fix PB ghost issue in Solo?
+- show final time
 
 -->

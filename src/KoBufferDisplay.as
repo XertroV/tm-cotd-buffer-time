@@ -15,12 +15,10 @@ namespace KoBuffer {
     void InitCoro() {
         dev_trace("KoBuffer::InitCoro");
         startnew(MainCoro);
-        if (Setting_BufferFontSize < 0.1) {
-            Setting_BufferFontSize = 60 * Draw::GetHeight() / 1440;
-        }
         _S_TA_PriorPriorities[0] = S_TA_Priority1Type;
         _S_TA_PriorPriorities[1] = S_TA_Priority2Type;
         _S_TA_PriorPriorities[2] = S_TA_Priority3Type;
+        OnSettingsChanged();
     }
 
     void MainCoro() {
@@ -385,22 +383,30 @@ namespace KoBufferUI {
 
     CGamePlaygroundUIConfig::EUISequence currSeq = CGamePlaygroundUIConfig::EUISequence::None;
     void Render() {
+        if (S_ShowFinalTime_Preview) {
+            RenderFinalTime();
+        }
         if (Setting_ShowPreview) {
             ShowPreview();
             if (Setting_ShowSecondaryPreview)
                 ShowPreview(true);
             return;
         }
+
         currSeq = KoBuffer::GetUiSequence(GetApp());
-        bool skipSequence =
-            currSeq != CGamePlaygroundUIConfig::EUISequence::Playing
-            && currSeq != CGamePlaygroundUIConfig::EUISequence::Finish
-            && currSeq != CGamePlaygroundUIConfig::EUISequence::EndRound;
+        bool isPlaying = currSeq == CGamePlaygroundUIConfig::EUISequence::Playing;
+        bool isFinish = currSeq == CGamePlaygroundUIConfig::EUISequence::Finish;
+        bool isEndRound = currSeq != CGamePlaygroundUIConfig::EUISequence::EndRound;
+        bool skipSequence = !isPlaying && !isFinish && !isEndRound;
         if (!g_koBufferUIVisible || skipSequence
             || (S_ShowOnlyWhenInterfaceHidden && !KoBuffer::IsInterfaceHidden(GetApp()))
         ) {
             Reset_TA();
             return;
+        }
+
+        if (S_ShowFinalTime && (isFinish || (isPlaying && ta_playerTime !is null && ta_playerTime.cpCount == MLFeed::GetRaceData().CPsToFinish))) {
+            RenderFinalTime();
         }
 
         if (S_ShowBufferTimeInKO && KoBuffer::IsGameModeCotdKO)
@@ -504,6 +510,10 @@ namespace KoBufferUI {
 
     void DrawDebug_WrappedTimes(const string &in name, CPAbstraction@ wt) {
         UI::Text(name + ": " + (wt is null ? "null" :  wt.ToString()));
+    }
+
+    void RenderFinalTime() {
+        DrawFinalTime();
     }
 
     enum GhostChoice {
@@ -970,6 +980,49 @@ namespace KoBufferUI {
             return UI::InputBlocking::Block;
         }
         return UI::InputBlocking::DoNothing;
+    }
+
+    const uint64 tsAtLoad = Time::Stamp;
+    void DrawFinalTime() {
+        string toDraw;
+        if (S_ShowFinalTime_Preview) {
+            uint64 ts = ((tsAtLoad % 86400) % 3600) * 1000 + (Time::Now % 100000);
+            ts -= (ts % 1337);  // will update every 1.337 seconds with a new time
+            if (ta_playerTime !is null && ta_playerTime.lastCpTime > 0)
+                ts = uint(ta_playerTime.lastCpTime);
+            toDraw = Time::Format(ts, true, true);
+        } else {
+            if (ta_playerTime is null) return;
+            uint finalTime = uint(ta_playerTime.lastCpTime);
+            toDraw = Time::Format(finalTime);
+        }
+        nvg::Reset();
+        auto screen = vec2(Draw::GetWidth(), Draw::GetHeight());
+        vec2 pos = (screen * S_FT_DisplayPosition / vec2(100, 100));
+        float fontSize = S_FT_FontSize;
+        float sw = S_FT_StrokeWidth;
+
+        nvg::FontFace(fontChoiceToFont[S_FT_Font]);
+        nvg::FontSize(fontSize);
+        nvg::TextAlign(nvg::Align::Center | nvg::Align::Middle);
+
+        // "stroke"
+        if (S_FT_EnableStroke) {
+            float nCopies = 32; // this does not seem to be expensive
+            nvg::FillColor(Col_FT_Stroke);
+            for (float i = 0; i < nCopies; i++) {
+                float angle = TAU * float(i) / nCopies;
+                if (S_FT_ReplaceStrokeWithShadow)
+                    angle = TAU * S_FT_ShadowAngle / 360.;
+                vec2 offs = vec2(Math::Sin(angle), Math::Cos(angle)) * sw;
+                nvg::Text(pos + offs, toDraw);
+                if (S_FT_ReplaceStrokeWithShadow)
+                    break;
+            }
+        }
+
+        nvg::FillColor(Col_FT_Main);
+        nvg::Text(pos, toDraw);
     }
 
     /* DEBUG WINDOW: SHOW ALL */

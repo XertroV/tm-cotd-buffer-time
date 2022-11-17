@@ -45,8 +45,8 @@ An alternative to checkpoints; shows Buffer Time compared to a reference. In COT
 
 - tmp disable option?
 - reference: best time on server?
-- track priority choices and auto repopulate better
+- [done] track priority choices and auto repopulate better
 - [done] fix PB ghost issue in Solo?
-- show final time
+- [done] show final time
 
 -->

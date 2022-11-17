@@ -1,7 +1,7 @@
 [Setting category="Global" name="Enable?" description="Whether the timer shows up at all or not. If unchecked, the plugin will not draw anything to the screen. This is the same setting as checking/unchecking this plugin in the Scripts menu."]
 bool g_koBufferUIVisible = true;
 
-[Setting category="Global" name="Show Buffer Time during TA / Campaign?"]
+[Setting category="Global" name="Show Buffer Time during TA / Solo?"]
 bool S_ShowBufferTimeInTA = true;
 
 [Setting category="Global" name="Show Buffer Time during KO / COTD KO?"]
@@ -12,6 +12,9 @@ bool S_ShowOnlyWhenInterfaceHidden = false;
 
 [Setting category="Global" name="Hide the Incredibly Useful MenuBar Item?" description="A MenuBar item will appear when Buffer Time is active. This menu contains many useful quick settings to change the behavior of Buffer Time (including disabling it for this collection of game modes)."]
 bool S_HideIncrediblyUsefulMenuBarItem = false;
+
+[Setting category="Global" name="Show Final Time?" description="When you finish a map, your final time will be shown."]
+bool S_ShowFinalTime = true;
 
 
 
@@ -58,6 +61,7 @@ vec4 Col_BehindDefinite = vec4(0.942f, 0.502f, 0.000f, 1.000f);
 
 [Setting color category="Buffer Time Display" name="Color: Far Ahead"]
 vec4 Col_FarAhead = vec4(0.008f, 1.000f, 0.000f, 1.000f);
+
 [Setting color category="Buffer Time Display" name="Color: Far Behind"]
 vec4 Col_FarBehind = vec4(0.961f, 0.007f, 0.007f, 1.000f);
 
@@ -69,6 +73,38 @@ vec4 Setting_BufferTimeBGColor = vec4(0.000f, 0.000f, 0.000f, 0.631f);
 
 [Setting category="Buffer Time Display" min=0.0 max=2.0 name="Secondary Buffer Time Scale" description="If a secondary timer is shown, how big should it be compared to the prioritized timer?"]
 float S_SecondaryTimerScale = 0.5;
+
+
+
+[Setting category="Final Time Display" name="Preview?" description="This will show a preview of what it will look like when your final time is shown."]
+bool S_ShowFinalTime_Preview = true;
+
+[Setting category="Final Time Display" name="Display Position" description="Origin: Top left. Values: Proportion of screen (range: 0-100%; default: (75, 25))" drag]
+vec2 S_FT_DisplayPosition = vec2(75, 25);
+
+[Setting category="Final Time Display" name="Font Choice"]
+KoBufferUI::FontChoice S_FT_Font = KoBufferUI::FontChoice::Oswald_Regular;
+
+[Setting category="Final Time Display" name="Font Size" min="10" max="250"]
+float S_FT_FontSize = 120 * Draw::GetHeight() / 1440;
+
+[Setting category="Final Time Display" name="Enable Stroke / Shadow"]
+bool S_FT_EnableStroke = true;
+
+[Setting category="Final Time Display" name="Shadow Instead of Stroke?" description="This replaces the stroke with a drop shadow. Stroke must be enabled, and the same settings work for both."]
+bool S_FT_ReplaceStrokeWithShadow = true;
+
+[Setting category="Final Time Display" name="Stroke Width" min="1.0" max="20.0"]
+float S_FT_StrokeWidth = 7.5;
+
+[Setting category="Final Time Display" name="Shadow Angle" min="0" max="360"]
+float S_FT_ShadowAngle = 45;
+
+[Setting color category="Final Time Display" name="Color: Text"]
+vec4 Col_FT_Main = vec4(1, 1, 1, 1);
+
+[Setting color category="Final Time Display" name="Color: Stroke"]
+vec4 Col_FT_Stroke = vec4(0, 0, 0, 1);
 
 
 
@@ -85,25 +121,25 @@ bool Setting_SafeIndicatorInNoKO = true;
 
 
 
-[Setting category="TA / Campaign" name="Show Compared to Ghost?" description="If true, a buffer time will be displayed relative to the best ghost (or one of your choosing) that was loaded at any point since the map was loaded. (The ghost can be unloaded immediately if you want.)"]
+[Setting category="TA / Solo" name="Show Compared to Ghost?" description="If true, a buffer time will be displayed relative to the best ghost (or one of your choosing) that was loaded at any point since the map was loaded. (The ghost can be unloaded immediately if you want.)"]
 bool S_TA_VsBestGhost = true;
 
-[Setting category="TA / Campaign" name="Show Compared to Best Time?" description="If true, a buffer time will be displayed relative to your best time set on the server this session/round."]
+[Setting category="TA / Solo" name="Show Compared to Best Time?" description="If true, a buffer time will be displayed relative to your best time set on the server this session/round."]
 bool S_TA_VsBestRecentTime = true;
 
-[Setting category="TA / Campaign" name="Show Comapred to Personal Bests?" description="If true, a buffer time will be displayed relative to your PB ghost when available, or the best ghost with your user name."]
+[Setting category="TA / Solo" name="Show Comapred to Personal Bests?" description="If true, a buffer time will be displayed relative to your PB ghost when available, or the best ghost with your user name."]
 bool S_TA_VsPB = true;
 
-[Setting category="TA / Campaign" name="Show two buffer times?" description="If true, when both of the above options are selected, a smaller buffer time will be shown beneath/above the first. (The larger one is the one with priority.)"]
+[Setting category="TA / Solo" name="Show two buffer times?" description="If true, when both of the above options are selected, a smaller buffer time will be shown beneath/above the first. (The larger one is the one with priority.)"]
 bool S_TA_ShowTwoBufferTimes = true;
 
-[Setting category="TA / Campaign" name="Show during COTD Qualifier?" description="If true, the buffer time will be visible during COTD qualifier. Otherwise, it will be hidden."]
+[Setting category="TA / Solo" name="Show during COTD Qualifier?" description="If true, the buffer time will be visible during COTD qualifier. Otherwise, it will be hidden."]
 bool S_TA_ShowDuringCotdQuali = true;
 
-[Setting category="TA / Campaign" name="Hide when Spectating?" description="When spectating, the buffer time shown will be a comparison to your PB or the best ghost, depending on priority."]
+[Setting category="TA / Solo" name="Hide when Spectating?" description="When spectating, the buffer time shown will be a comparison to your PB or the best ghost, depending on priority."]
 bool S_TA_HideWhenSpectating = false;
 
-[Setting category="TA / Campaign" name="Update Timer Immediately?" description="By default, the buffer time will act as though you're in a live match -- you won't know a ghost hit a CP until it would if it were live. With this setting enabled, deltas will be shown instantly when you are leading and hit a new CP (this is roughly how checkpoint splits normally work)."]
+[Setting category="TA / Solo" name="Update Timer Immediately?" description="By default, the buffer time will act as though you're in a live match -- you won't know a ghost hit a CP until it would if it were live. With this setting enabled, deltas will be shown instantly when you are leading and hit a new CP (this is roughly how checkpoint splits normally work)."]
 bool S_TA_UpdateTimerImmediately = false;
 
 const uint NbTaBufferTimeTypes = 5;
@@ -111,13 +147,13 @@ enum TaBufferTimeType {
     None, AgainstGhost, BestTimeOrPB, YourBestTime, YourPB
 }
 
-[Setting category="TA / Campaign" name="Prioritized Buffer Time" description="When two or more buffer times are available, which one has priority?"]
+[Setting category="TA / Solo" name="Prioritized Buffer Time" description="When two or more buffer times are available, which one has priority?"]
 TaBufferTimeType S_TA_Priority1Type = TaBufferTimeType::YourBestTime;
 
-[Setting category="TA / Campaign" name="Secondary Buffer Time" description="When two or more buffer times are available, which one should be prioritized second?"]
+[Setting category="TA / Solo" name="Secondary Buffer Time" description="When two or more buffer times are available, which one should be prioritized second?"]
 TaBufferTimeType S_TA_Priority2Type = TaBufferTimeType::YourPB;
 
-[Setting category="TA / Campaign" name="Tertiary Buffer Time" description="When three buffer times are available, which one should be prioritized third? Note: it will not show up unless one of the high priority timers cannot be shown or is a duplicate."]
+[Setting category="TA / Solo" name="Tertiary Buffer Time" description="When three buffer times are available, which one should be prioritized third? Note: it will not show up unless one of the high priority timers cannot be shown or is a duplicate."]
 TaBufferTimeType S_TA_Priority3Type = TaBufferTimeType::AgainstGhost;
 
 

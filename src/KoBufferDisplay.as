@@ -262,6 +262,26 @@ namespace KoBufferUI {
             Setting_ShowOutIndicatorEver = !Setting_ShowOutIndicatorEver;
     }
 
+    array<const MLFeed::GhostInfo@> _ghosts;
+    uint lastNbGhosts = 0;
+
+    void UpdateGhosts() {
+        auto GD = MLFeed::GetGhostData();
+        if (lastNbGhosts != GD.NbGhosts) {
+            lastNbGhosts = GD.NbGhosts;
+            _ghosts.RemoveRange(0, _ghosts.Length);
+            dictionary seenGhosts;
+            string key;
+            for (uint i = 0; i < GD.Ghosts.Length; i++) {
+                auto item = GD.Ghosts[i];
+                key = item.Nickname + item.Result_Time;
+                if (seenGhosts.Exists(key)) continue;
+                seenGhosts[key] = true;
+                _ghosts.InsertLast(item);
+            }
+        }
+    }
+
     void RenderTaMenuMainInner() {
         UI::Text("\\$bbb  Time Attack / Campaign Options");
         if (UI::BeginMenu("Disable Buffer Time during TA")) {
@@ -281,27 +301,21 @@ namespace KoBufferUI {
         UI::Text("\\$bbb  Secondary: " + WrappedTimesLabel(secondaryGhostRaw));
         UI::Text("\\$bbb  Tertiary: " + WrappedTimesLabel(tertiaryGhostRaw));
 
-        if (UI::BeginMenu("Ghost Choice:")) {
+        UpdateGhosts();
+
+        if (UI::BeginMenu("Ghost Choice:  \\$bbb("+_ghosts.Length+")")) {
             bool choiceBestGhost = S_TA_GhostChoice == GhostChoice::BestGhost;
             if (UI::MenuItem("Best Ghost", "", choiceBestGhost)) {
                 S_TA_GhostChoice = GhostChoice::BestGhost;
             }
-            auto GD = MLFeed::GetGhostData();
-            bool listedPriorityGhost = false;
-            dictionary seenGhosts;
-            string key;
-            for (uint i = 0; i < GD.Ghosts.Length; i++) {
-                auto item = GD.Ghosts[i];
-                key = item.Nickname + item.Result_Time;
-                if (seenGhosts.Exists(key)) continue;
-                seenGhosts[key] = true;
+            for (uint i = 0; i < _ghosts.Length; i++) {
+                auto item = _ghosts[i];
                 bool selected = item.Result_Time == S_TA_GhostTime && item.Nickname == S_TA_GhostName;
                 if (UI::MenuItem(GhostInfoLabel(item), "", selected && !choiceBestGhost)) {
                     S_TA_GhostChoice = GhostChoice::NamedGhost;
                     S_TA_GhostName = item.Nickname;
                     S_TA_GhostTime = item.Result_Time;
                 }
-                listedPriorityGhost = listedPriorityGhost || selected;
             }
             UI::EndMenu();
         }
@@ -340,10 +354,6 @@ namespace KoBufferUI {
             DrawPriorityInner(3, S_TA_Priority3Type, S_TA_Priority3Type);
             UI::EndMenu();
         }
-        // UI::Text("\\$bbb   Currently prioritizing: " + tostring(S_TA_PrioritizedType));
-        // auto otherPriorityType = TaBufferTimeType((uint(S_TA_PrioritizedType) + 1 ) % 2);
-        // if (UI::MenuItem("Change priority to " + tostring(otherPriorityType)))
-        //     S_TA_PrioritizedType = otherPriorityType;
     }
 
     void DrawPriorityInner(uint priority, TaBufferTimeType _S_Selected, TaBufferTimeType &out _S_Type) {
@@ -502,9 +512,11 @@ namespace KoBufferUI {
         const MLFeed::GhostInfo@ pbGhost = null;
         bool updateBestGhostNotChosen = S_TA_GhostChoice == GhostChoice::BestGhost;
 
+        UpdateGhosts();
+
         if (updateGhosts) {
-            for (uint i = 0; i < ghostData.NbGhosts; i++) {
-                auto g = ghostData.Ghosts[i];
+            for (uint i = 0; i < _ghosts.Length; i++) {
+                auto g = _ghosts[i];
                 bool nameMatches = g.Nickname == playerName;
                 bool namePb = g.Nickname.EndsWith("Personal best");
 

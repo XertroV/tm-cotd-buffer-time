@@ -62,6 +62,7 @@ namespace Updates {
             UI::TextWrapped("- Big render time improvement in TA.");
             UI::TextWrapped("- Fix: timer wouldn't used to show if there were 0 ghosts loaded.");
             UI::TextWrapped("- Fix: duplicate ghosts in menu selection.");
+            UI::TextWrapped("- Fix: crash when selecting 'BestTimeOrPB'.");
         }
         UI::EndChild();
     }

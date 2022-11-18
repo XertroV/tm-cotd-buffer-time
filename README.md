@@ -14,15 +14,16 @@ This means you can see your current progress compared to both your PB and the WR
 
 This plugin can function as a replacement for checkpoint splits all together in supported game modes (if you like to play with the interface off, for example).
 
-### *__IMPORTANT:__ This plugin depends on __MLHook__ v0.3.0+ and __MLFeed: Race Data__. You must also install those plugins.*
+#### *__IMPORTANT:__ This plugin depends on __MLHook__ v0.3.0+ and __MLFeed: Race Data__. You must also install those plugins.*
 
 If you don't, at best you'll get a polite notification and at worst you'll get a compile error.
 
 ### In The Wild
 
 * [AR_Down explains COTD Buffer Time](https://www.twitch.tv/ar_down/clip/ArborealStrongFungusVoHiYo-3zeYG5yvTMo7DS8W)
-* [jnic explains COTD Buffer Time](https://clips.twitch.tv/InspiringObeseMetalRiPepperonis-dUKDhfWPNZ7dYoKa)
+* [jnic explains COTD Buffer Time](https://clips.twitch.tv/InspiringObeseMetalRiPepperonis-dUKDhfWPNZ7dYoKa) ([YouTube Version](https://www.youtube.com/watch?v=VCl6Yic_1x8))
 * [jnic discovers the joys of UI off + Buffer Time](https://clips.twitch.tv/MagnificentSparklingFlamingoBrokeBack-79RXx6-B5ZA7MATl)
+
 
 ### Before Version 2
 

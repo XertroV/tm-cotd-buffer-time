@@ -31,40 +31,7 @@ namespace KoBuffer {
             lastGM = CurrentGameMode;
             dev_trace("Set game mode: " + lastGM);
             KoBufferUI::Reset_TA();
-            if (lastGM == "TM_Campaign_Local")
-                startnew(OnLocalFixPbGhost);
         }
-    }
-
-    // does not work
-    void OnLocalFixPbGhost() {
-        // while (GetApp().PlaygroundScript is null) yield();
-        // try {
-        //     uint waitMax = Time::Now + 20000;
-        //     auto @ps_dfm = GetApp().PlaygroundScript.DataFileMgr;
-        //     while (ps_dfm is null && Time::Now < waitMax) {
-        //         yield();
-        //         @ps_dfm = GetApp().PlaygroundScript.DataFileMgr;
-        //     }
-        //     while (Time::Now < waitMax) {
-        //         yield();
-        //         if (ps_dfm.Ghosts.Length > 0)
-        //             break;
-        //     }
-        //     if (Time::Now >= waitMax) {
-        //         // waited too long, assume no ghosts
-        //         return;
-        //     }
-        //     // add ghosts from ps_dfm to net.cmap.dfm
-        //     for (uint i = 0; i < ps_dfm.Ghosts.Length; i++) {
-        //         auto item = ps_dfm.Ghosts[i];
-        //         GetApp().Network.ClientManiaAppPlayground.DataFileMgr.Ghosts.Add(item);
-        //     }
-        //     // auto ghost0 = ps_dfm.Ghosts[0];
-        //     return;
-        // } catch {
-        //     warn("Excepting trying to fix local ghost: " + getExceptionInfo());
-        // }
     }
 
     string lastMap;
@@ -731,7 +698,6 @@ namespace KoBufferUI {
         if (type == TaBufferTimeType::VsGhost) return ta_bestGhost;
         if (type == TaBufferTimeType::YourBestTime) return ta_bestTime;
         if (type == TaBufferTimeType::YourPB) return ta_pbGhost;
-        // todo: suspect this causes the crash
         if (type == TaBufferTimeType::BestTimeOrPB) {
             WrappedTimes@ pb = ta_pbGhost;
             WrappedTimes@ bt = ta_bestTime;
@@ -741,6 +707,7 @@ namespace KoBufferUI {
             return bt;
         }
         if (type == TaBufferTimeType::VsPlayer) return ta_vsPlayer;
+        NotifyError("Bug: invalid type. Please report this to @XertroV on Openplanet Discord.");
         throw("SelectBasedOnType invalid type");
         return null;
     }

@@ -236,16 +236,29 @@ namespace KoBufferUI {
         }
     }
 
+    const string CurrentVisibilityStatus() {
+        if (g_KoBufferUIHidden) return "Hidden";
+        if (g_DisableTillNextGameStart) return "Hidden till restart";
+        if (S_ShowOnlyWhenInterfaceHidden && S_ShowOnlyWhenInterfaceVisible) return "Conflicting Settings";
+        if (S_ShowOnlyWhenInterfaceVisible) return "When UI Visible";
+        if (S_ShowOnlyWhenInterfaceHidden) return "When UI Hidden";
+        return "Visible";
+    }
+
     void RenderGlobalMenuMainInner() {
         UI::Text("\\$bbb Global Options");
-        string visibilityStatus = g_KoBufferUIHidden ? "Hidden" :
-            (g_DisableTillNextGameStart ? "Hidden till restart" : "Visible");
-        if (UI::BeginMenu("Visibility  \\$888  " + visibilityStatus)) {
+        if (UI::BeginMenu("Visibility      \\$888  " + CurrentVisibilityStatus())) {
             if (UI::MenuItem("Hide Till Next Game Launch?", "", g_DisableTillNextGameStart)) {
                 g_DisableTillNextGameStart = !g_DisableTillNextGameStart;
             }
             if (UI::MenuItem("Hide Altogether?", "", g_KoBufferUIHidden)) {
                 g_KoBufferUIHidden = !g_KoBufferUIHidden;
+            }
+            if (UI::MenuItem("Show only when UI Hidden?", "", S_ShowOnlyWhenInterfaceHidden)) {
+                S_ShowOnlyWhenInterfaceHidden = !S_ShowOnlyWhenInterfaceHidden;
+            }
+            if (UI::MenuItem("Show only when UI Visible?", "", S_ShowOnlyWhenInterfaceVisible)) {
+                S_ShowOnlyWhenInterfaceVisible = !S_ShowOnlyWhenInterfaceVisible;
             }
             UI::EndMenu();
         }

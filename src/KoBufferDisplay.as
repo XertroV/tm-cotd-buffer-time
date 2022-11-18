@@ -288,7 +288,7 @@ namespace KoBufferUI {
 
     void RenderTaMenuMainInner() {
         RenderGlobalMenuMainInner();
-        UI::Text("\\$bbb Time Attack / Campaign Options");
+        UI::Text("\\$bbb Time Attack / Solo Options");
         if (UI::BeginMenu("Disable Buffer Time during TA")) {
                 if (KoBuffer::IsGameModeCotdQuali) {
                     bool disableCotdQuali = UI::MenuItem("Disable for COTD Quali");
@@ -313,9 +313,9 @@ namespace KoBufferUI {
         UI::Separator();
 
         UI::Text("\\$bbb Current References:");
-        UI::Text("\\$bbb  Priority: " + WrappedTimesLabel(priorityGhostRaw));
-        UI::Text("\\$bbb  Secondary: " + WrappedTimesLabel(secondaryGhostRaw));
-        UI::Text("\\$bbb  Tertiary: " + WrappedTimesLabel(tertiaryGhostRaw));
+        UI::Text("\\$bbb  Priority 1: " + WrappedTimesLabel(priorityGhostRaw));
+        UI::Text("\\$bbb  Priority 2: " + WrappedTimesLabel(secondaryGhostRaw));
+        UI::Text("\\$bbb  Priority 3: " + WrappedTimesLabel(tertiaryGhostRaw));
 
         if (UI::BeginMenu("Priority 1: \\$bbb("+tostring(S_TA_Priority1Type)+")")) {
             DrawPriorityInner(1, S_TA_Priority1Type, S_TA_Priority1Type);

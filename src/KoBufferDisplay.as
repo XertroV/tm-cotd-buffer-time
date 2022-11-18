@@ -238,19 +238,28 @@ namespace KoBufferUI {
 
     void RenderGlobalMenuMainInner() {
         UI::Text("\\$bbb Global Options");
-        if (UI::MenuItem("Hide Till Next Game Launch?", "", g_DisableTillNextGameStart)) {
-            g_DisableTillNextGameStart = !g_DisableTillNextGameStart;
+        string visibilityStatus = g_KoBufferUIHidden ? "Hidden" :
+            (g_DisableTillNextGameStart ? "Hidden till restart" : "Visible");
+        if (UI::BeginMenu("Visibility  \\$888  " + visibilityStatus)) {
+            if (UI::MenuItem("Hide Till Next Game Launch?", "", g_DisableTillNextGameStart)) {
+                g_DisableTillNextGameStart = !g_DisableTillNextGameStart;
+            }
+            if (UI::MenuItem("Hide Altogether?", "", g_KoBufferUIHidden)) {
+                g_KoBufferUIHidden = !g_KoBufferUIHidden;
+            }
+            UI::EndMenu();
         }
-        if (UI::MenuItem("Hide Altogether?", "", g_KoBufferUIHidden)) {
-            g_KoBufferUIHidden = !g_KoBufferUIHidden;
+        string ftStatus = !S_ShowFinalTime ? "Disabled"
+            : (S_FT_OnlyWhenInterfaceHidden ? "When UI Hidden" : "Always");
+        if (UI::BeginMenu("Final Time  \\$888  " + ftStatus)) {
+            if (UI::MenuItem("Visible?", "", S_ShowFinalTime)) {
+                S_ShowFinalTime = !S_ShowFinalTime;
+            }
+            if (UI::MenuItem("Only when UI Hidden?", "", S_FT_OnlyWhenInterfaceHidden)) {
+                S_FT_OnlyWhenInterfaceHidden = !S_FT_OnlyWhenInterfaceHidden;
+            }
+            UI::EndMenu();
         }
-        if (UI::MenuItem("Show Final Time?", "", S_ShowFinalTime)) {
-            S_ShowFinalTime = !S_ShowFinalTime;
-        }
-        if (UI::MenuItem("Final Time only when UI Hidden?", "", S_FT_OnlyWhenInterfaceHidden)) {
-            S_FT_OnlyWhenInterfaceHidden = !S_FT_OnlyWhenInterfaceHidden;
-        }
-
         UI::Separator();
     }
 

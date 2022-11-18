@@ -9,6 +9,9 @@ bool g_KoBufferUIHidden {
 [Setting category="Global" name="Show Final Time?" description="When you finish a race, your final time will be shown if UI settings match (see next setting)."]
 bool S_ShowFinalTime = true;
 
+[Setting category="Global" name="Hide when GPS playing?" description="When you're detected to be watching a GPS, the timer will be hidden."]
+bool S_HideWhenGPSActive = true;
+
 [Setting category="Global" name="Show Final TIme only when Interface Hidden?" description="The final time will show only when the interface is hidden."]
 bool S_FT_OnlyWhenInterfaceHidden = true;
 

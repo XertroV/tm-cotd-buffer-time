@@ -171,6 +171,14 @@ namespace KoBuffer {
             return CGamePlaygroundUIConfig::EUISequence::None;
         }
     }
+
+    bool get_IsUiSeqPlaying() {
+        return GetUiSequence(GetApp()) == CGamePlaygroundUIConfig::EUISequence::Playing;
+    }
+
+    bool get_IsUiSeqFinish() {
+        return GetUiSequence(GetApp()) == CGamePlaygroundUIConfig::EUISequence::Finish;
+    }
 }
 
 namespace KoBufferUI {
@@ -226,6 +234,9 @@ namespace KoBufferUI {
             }
             if (UI::MenuItem("Show only when UI Visible?", "", S_ShowOnlyWhenInterfaceVisible)) {
                 S_ShowOnlyWhenInterfaceVisible = !S_ShowOnlyWhenInterfaceVisible;
+            }
+            if (UI::MenuItem("Hide when GPS active?", "", S_HideWhenGPSActive)) {
+                S_HideWhenGPSActive = !S_HideWhenGPSActive;
             }
             UI::EndMenu();
         }
@@ -417,13 +428,20 @@ namespace KoBufferUI {
         bool isFinish = currSeq == CGamePlaygroundUIConfig::EUISequence::Finish;
         bool isEndRound = currSeq != CGamePlaygroundUIConfig::EUISequence::EndRound;
         bool skipSequence = !isPlaying && !isFinish && !isEndRound;
-        if (!g_koBufferUIVisible || skipSequence
+        if (!g_koBufferUIVisible
+            || skipSequence
             || (S_ShowOnlyWhenInterfaceHidden && UI::IsGameUIVisible())
             || (S_ShowOnlyWhenInterfaceVisible && !UI::IsGameUIVisible())
         ) {
             Reset_TA();
             return;
         }
+
+        // modify isFinish here to account for spectating.
+        isFinish = isFinish || (isPlaying && ta_playerTime !is null && uint(ta_playerTime.cpCount) == MLFeed::GetRaceData().CPsToFinish);
+        if (isFinish) isPlaying = false;
+
+        if (isPlaying && S_HideWhenGPSActive && IsGPSActive()) return;
 
         if (S_ShowFinalTime && (isFinish || (isPlaying && ta_playerTime !is null && uint(ta_playerTime.cpCount) == MLFeed::GetRaceData().CPsToFinish))) {
             RenderFinalTime();

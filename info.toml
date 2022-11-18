@@ -6,4 +6,4 @@ version  = "2.1.12"
 
 [script]
 #__DEFINES__
-dependencies = ["MLHook", "MLFeedRaceData"] # need both
+dependencies = ["MLHook", "MLFeedRaceData", "VehicleState", "Camera"]

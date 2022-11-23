@@ -854,14 +854,9 @@ namespace KoBufferUI {
         auto aheadPlayer = isBehind ? targetCpInfo : localPlayer;
         auto behindPlayer = isBehind ? localPlayer : targetCpInfo;
         uint expectedExtraCps = 0;
-        // PlayerCpInfo includes zeroth cp time, but GhostInfo does not.
-        // is the zeroth cp in aheadPlayer's cp times? (i.e.: cpTimes[0] == 0)?
-        // if not, we need to offset access to `aheadPlayer.cpTimes` by -1 (i.e., cpTimes[2 -1] = 2nd CP time);
-        // we only use behindPlayer.lastCpTime, so don't need an offset for that.
-        int apOffs = (aheadPlayer.cpTimes.Length == 0 || aheadPlayer.cpTimes[0] > 0) ? -1 : 0;
         if (aheadPlayer.cpCount > behindPlayer.cpCount) {
-            expectedExtraCps = Math::Max(currRaceTime - behindPlayer.lastCpTime, aheadPlayer.cpTimes[behindPlayer.cpCount + 1 + apOffs] - aheadPlayer.cpTimes[behindPlayer.cpCount + apOffs]);
-            msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount + 1 + apOffs] + expectedExtraCps;
+            expectedExtraCps = Math::Max(currRaceTime - behindPlayer.lastCpTime, aheadPlayer.cpTimes[behindPlayer.cpCount + 1] - aheadPlayer.cpTimes[behindPlayer.cpCount]);
+            msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount + 1] + expectedExtraCps;
         } else if (aheadPlayer.cpCount < behindPlayer.cpCount) {
             // should never be true
             msDelta = 98765;
@@ -870,7 +865,7 @@ namespace KoBufferUI {
             NotifyError("Ahead Player has fewer CPs than Behind Player!");
 #endif
         } else {
-            msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount + apOffs];
+            msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount];
         }
         return msDelta;
     }
@@ -1150,6 +1145,7 @@ namespace KoBufferUI {
                         auto pm = GetPlusMinusFor(bt.isBehind);
 
                         // columns
+                        UI::TableNextRow();
 
                         UI::TableNextColumn();
                         UI::Text("" + player.raceRank);

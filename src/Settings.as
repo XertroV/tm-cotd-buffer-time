@@ -208,6 +208,9 @@ bool S_News_Viewed_2022_11_15 = false;
 [Setting category="Updates"]
 bool S_News_Viewed_2022_11_18 = false;
 
+[Setting category="Updates"]
+bool S_News_Viewed_2022_11_23 = false;
+
 
 
 /* debug stuff */

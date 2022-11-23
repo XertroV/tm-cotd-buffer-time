@@ -4,12 +4,14 @@ namespace Updates {
             return false
                 || !S_News_Viewed_2022_11_15
                 || !S_News_Viewed_2022_11_18
+                || !S_News_Viewed_2022_11_23
                 ;
         }
         set {
             if (value == false) {
                 S_News_Viewed_2022_11_15 = true;
                 S_News_Viewed_2022_11_18 = true;
+                S_News_Viewed_2022_11_23 = true;
             }
         }
     }
@@ -32,11 +34,25 @@ namespace Updates {
             if (UI::Begin(Meta::ExecutingPlugin().Name + ": Updates!", hasUpdates, flags)) {
                 _childWidth = UI::GetWindowContentRegionWidth() - 40;
                 Heading("Buffer Time -- Latest Updates");
+                Update_2022_11_23();
                 Update_2022_11_18();
                 Update_2022_11_15();
             }
             UI::End();
         }
+    }
+
+    void Update_2022_11_23() {
+        if (S_News_Viewed_2022_11_23) return;
+        UI::Separator();
+        Heading("v2.1.13");
+        UI::Dummy(vec2(10, 0));
+        UI::SameLine();
+        if (UI::BeginChild("news-2022_11_23", vec2(_childWidth, 380))) {
+            SubHeading("Hide While GPS Active");
+            UI::TextWrapped("New setting: 'Hide when GPS active?'. Note: this is also active while in cam 7 due to limitations of the implementation.");
+        }
+        UI::EndChild();
     }
 
     void Update_2022_11_18() {

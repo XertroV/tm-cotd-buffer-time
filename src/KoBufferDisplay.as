@@ -301,6 +301,9 @@ namespace KoBufferUI {
         if (UI::MenuItem("Update Timer Immediately?", "", S_TA_UpdateTimerImmediately))
             S_TA_UpdateTimerImmediately = !S_TA_UpdateTimerImmediately;
 
+        if (UI::MenuItem("Show Vs. Time at Race Start?", "", S_TA_ShowFinalTimeAtStart))
+            S_TA_ShowFinalTimeAtStart = !S_TA_ShowFinalTimeAtStart;
+
         UI::Separator();
 
         UI::Text("\\$bbb Current References:");
@@ -590,6 +593,7 @@ namespace KoBufferUI {
 
 
         bool isUiSeqPlaying = currSeq == CGamePlaygroundUIConfig::EUISequence::Playing;
+        bool isRaceStart = isUiSeqPlaying && KoBuffer::GetCurrentRaceTime(GetApp()) < 5000;  // first 5s only
         bool shouldUpdateGhosts = isUiSeqPlaying;
         const MLFeed::GhostInfo@ chosenGhost = null;
         // const MLFeed::GhostInfo@ bestGhost = null; // todo: mb track this too and default to it?
@@ -694,7 +698,20 @@ namespace KoBufferUI {
             @tertiaryGhost = null;
         }
 
-        bool showTwoTimes = S_TA_ShowTwoBufferTimes && secondaryGhost !is null && priorityGhost != secondaryGhost && not secondaryGhost.IsEmpty;
+        bool showTwoTimes = S_TA_ShowTwoBufferTimes && secondaryGhost !is null && not secondaryGhost.IsEmpty
+            && (priorityGhost != secondaryGhost
+                || (S_TA_ShowFinalTimeAtStart && priorityGhost.innerResultTime != secondaryGhost.innerResultTime)
+            );
+
+        bool showReferenceFinalTimes = S_TA_ShowFinalTimeAtStart && isRaceStart && IsPlayerStationary();
+
+        if (showReferenceFinalTimes) {
+            DrawReferenceFinalTime(priorityGhost.innerResultTime, S_TA_FinalRefTimeColor);
+            if (showTwoTimes) {
+                DrawReferenceFinalTime(secondaryGhost.innerResultTime, S_TA_FinalRefTimeColor, true);
+            }
+            return;
+        }
 
         // priority ghost
         bool isBehind = ta_playerTime > priorityGhost;
@@ -969,10 +986,18 @@ namespace KoBufferUI {
         return (isBehind ^^ Setting_SwapPlusMinus) ? "-" : "+";
     }
 
+    void DrawReferenceFinalTime(int finalTime, vec4 bufColor, bool isSecondary = false) {
+        DrawBufferTime_Inner(Time::Format(Math::Max(finalTime, 0)), bufColor, isSecondary);
+    }
+
     void DrawBufferTime(int msDelta, bool isBehind, vec4 bufColor, bool isSecondary = false) {
         msDelta = Math::Abs(msDelta);
         nvg::Reset();
         string toDraw = GetPlusMinusFor(isBehind) + MsToSeconds(msDelta);
+        DrawBufferTime_Inner(toDraw, bufColor, isSecondary);
+    }
+
+    void DrawBufferTime_Inner(const string &in toDraw, vec4 bufColor, bool isSecondary = false) {
         auto screen = vec2(Draw::GetWidth(), Draw::GetHeight());
         vec2 pos = (screen * Setting_BufferDisplayPosition / vec2(100, 100));// - (size / 2);
         float fontSize = Setting_BufferFontSize;
@@ -1039,6 +1064,7 @@ namespace KoBufferUI {
     }
 
     const uint64 tsAtLoad = Time::Stamp;
+    // this shows the final time on race completion of the player
     void DrawFinalTime() {
         string toDraw;
         if (S_ShowFinalTime_Preview) {

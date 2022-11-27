@@ -161,6 +161,12 @@ bool S_TA_HideWhenSpectating = false;
 [Setting category="TA / Solo" name="Update Timer Immediately?" description="When disabled, the buffer time will act as though you're in a live match -- you won't know a ghost hit a CP until it would if it were live."]
 bool S_TA_UpdateTimerImmediately = true;
 
+[Setting category="TA / Solo" name="Show Vs. Time at Race Start?" description="When enabled, at the start of the race the timer will show you the final time of the reference ghost/times. This allows you to quickly check what the buffer timer will be comparing against."]
+bool S_TA_ShowFinalTimeAtStart = true;
+
+[Setting category="TA / Solo" name="Vs. Time at Start Color" description="The color of the vs. time shown at the start of the race if the above setting is enabled." color]
+vec4 S_TA_FinalRefTimeColor = vec4(1, 1, 1, 1);
+
 
 array<TaBufferTimeType> _S_TA_PriorPriorities = {TaBufferTimeType::YourBestTime, TaBufferTimeType::YourPB, TaBufferTimeType::VsGhost};
 
@@ -210,6 +216,9 @@ bool S_News_Viewed_2022_11_18 = false;
 
 [Setting category="Updates"]
 bool S_News_Viewed_2022_11_23 = false;
+
+[Setting category="Updates"]
+bool S_News_Viewed_2022_11_27 = false;
 
 
 

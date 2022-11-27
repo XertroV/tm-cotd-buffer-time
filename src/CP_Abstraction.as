@@ -66,11 +66,16 @@ class WrappedTimes : CPAbstraction, CPAbstractionOpCmp {
         return innerResultTime <= 0;
     }
 
-    bool opEquals(const WrapGhostInfo@ other) {
+    // hmm, this does not seem to work for `priorityGhost == secondaryGhost`, so is it using opCmp from above?
+    bool opEquals(const WrappedTimes@ other) {
+        auto l = this.rawCheckpoints.Length;
         return other !is null
+            && this.innerResultTime == other.innerResultTime
             && other.cpCount == this.cpCount
             && other.lastCpTime == this.lastCpTime
-            && innerResultTime == other.innerResultTime;
+            // && other.rawCheckpoints.Length == this.rawCheckpoints.Length
+            // && (l == 0 || other.rawCheckpoints[l - 1] == this.rawCheckpoints[l - 1])
+            ;
     }
 }
 

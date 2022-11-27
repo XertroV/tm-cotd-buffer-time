@@ -24,3 +24,13 @@ bool IsGPSActive() {
     // print("Dist: " + g_PlayerToCamera.Length() + ", and IsGPSActive: " + tostring(notDriving));
     return notDriving;
 }
+
+bool IsPlayerStationary() {
+    auto gameScene = GetApp().GameScene;
+    if (gameScene is null) return true;
+    CSmPlayer@ currPlayer = VehicleState::GetViewingPlayer();
+    if (currPlayer is null) return true;
+    auto vis = VehicleState::GetVis(gameScene, currPlayer);
+    if (vis is null) return true;
+    return vis.AsyncState.WorldVel.LengthSquared() < 0.1;
+}

@@ -5,6 +5,7 @@ namespace Updates {
                 || !S_News_Viewed_2022_11_15
                 || !S_News_Viewed_2022_11_18
                 || !S_News_Viewed_2022_11_23
+                || !S_News_Viewed_2022_11_27
                 ;
         }
         set {
@@ -12,6 +13,7 @@ namespace Updates {
                 S_News_Viewed_2022_11_15 = true;
                 S_News_Viewed_2022_11_18 = true;
                 S_News_Viewed_2022_11_23 = true;
+                S_News_Viewed_2022_11_27 = true;
             }
         }
     }
@@ -34,6 +36,7 @@ namespace Updates {
             if (UI::Begin(Meta::ExecutingPlugin().Name + ": Updates!", hasUpdates, flags)) {
                 _childWidth = UI::GetWindowContentRegionWidth() - 40;
                 Heading("Buffer Time -- Latest Updates");
+                Update_2022_11_27();
                 Update_2022_11_23();
                 Update_2022_11_18();
                 Update_2022_11_15();
@@ -42,13 +45,36 @@ namespace Updates {
         }
     }
 
+    void Update_2022_11_27() {
+        if (S_News_Viewed_2022_11_27) return;
+        UI::Separator();
+        Heading("v2.1.15");
+        UI::Dummy(vec2(10, 0));
+        UI::SameLine();
+        if (UI::BeginChild("news-2022_11_27", vec2(_childWidth, 260))) {
+            UI::TextWrapped("Thanks to [\\$fc0" + Icons::StarO + "\\$z] AR_Down for the suggestions and bug reports.");
+            UI::Separator();
+
+            SubHeading("Show Vs. Time at Race Start (TA)");
+            UI::TextWrapped("New setting enabled by default for Time Attack.");
+            UI::TextWrapped("At the start of the race, the buffer timer will show the final time of the reference ghost/times.");
+            UI::TextWrapped("This will only show in the first 5 seconds of the race, and only if you are stationary.");
+            UI::Separator();
+
+            SubHeading("Bug Fixes");
+            UI::TextWrapped("- Fix: Timer hidden during alt cam 3 when 'Hide While GPS Active' setting is enabled. (2.1.14)");
+            UI::TextWrapped("- Fix: Secondary timer wouldn't show when reading 0 (before 1st cp).");
+        }
+        UI::EndChild();
+    }
+
     void Update_2022_11_23() {
         if (S_News_Viewed_2022_11_23) return;
         UI::Separator();
         Heading("v2.1.13");
         UI::Dummy(vec2(10, 0));
         UI::SameLine();
-        if (UI::BeginChild("news-2022_11_23", vec2(_childWidth, 380))) {
+        if (UI::BeginChild("news-2022_11_23", vec2(_childWidth, 80))) {
             SubHeading("Hide While GPS Active");
             UI::TextWrapped("New setting: 'Hide when GPS active?'. Note: this is also active while in cam 7 due to limitations of the implementation.");
         }

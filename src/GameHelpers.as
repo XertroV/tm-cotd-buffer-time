@@ -18,8 +18,9 @@ bool IsGPSActive() {
     auto vis = VehicleState::GetVis(gameScene, currPlayer);
     if (vis is null) return false;
     auto playerPos = vis.AsyncState.Position;
+    auto playerVector = vis.AsyncState.Dir;
     g_PlayerToCamera = playerPos - Camera::GetCurrentPosition();
-    bool notDriving = Camera::IsBehind(playerPos) || g_PlayerToCamera.LengthSquared() > MAX_CAMERA_DIST_SQ;
+    bool notDriving = Camera::IsBehind(playerPos + playerVector) || g_PlayerToCamera.LengthSquared() > MAX_CAMERA_DIST_SQ;
     // print("Dist: " + g_PlayerToCamera.Length() + ", and IsGPSActive: " + tostring(notDriving));
     return notDriving;
 }

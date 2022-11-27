@@ -514,12 +514,23 @@ namespace KoBufferUI {
         highestGhostIdSeen = 0;
     }
 
+    uint lastWarnManyGhosts = 0;
+    void WarnTooManyGhosts() {
+        if (lastWarnManyGhosts + 20000 < Time::Now) {
+            lastWarnManyGhosts = Time::Now;
+            NotifyWarning("The game has loaded at least " + lastNbGhosts + " ghosts.\n\nThis can cause lag upon crossing the finish line.\n\nQuit and rejoin the server to fix (or ignore it).");
+        }
+    }
+
     bool UpdateGhosts() {
         if (GetApp().RootMap is null) return false;
         auto GD = MLFeed::GetGhostData();
         if (lastNbGhosts != GD.NbGhosts) {
             auto start_time = Time::Now;
             lastNbGhosts = GD.NbGhosts;
+            if (lastNbGhosts > 200) {
+                WarnTooManyGhosts();
+            }
             // _ghosts.RemoveRange(0, _ghosts.Length);
             string key;
             for (uint i = 0; i < GD.Ghosts.Length; i++) {

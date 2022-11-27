@@ -51,7 +51,7 @@ namespace Updates {
         Heading("v2.1.15");
         UI::Dummy(vec2(10, 0));
         UI::SameLine();
-        if (UI::BeginChild("news-2022_11_27", vec2(_childWidth, 260))) {
+        if (UI::BeginChild("news-2022_11_27", vec2(_childWidth, 290))) {
             UI::TextWrapped("Thanks to [\\$fc0" + Icons::StarO + "\\$z] AR_Down for the suggestions and bug reports.");
             UI::Separator();
 
@@ -64,6 +64,7 @@ namespace Updates {
             SubHeading("Bug Fixes");
             UI::TextWrapped("- Fix: Timer hidden during alt cam 3 when 'Hide While GPS Active' setting is enabled. (2.1.14)");
             UI::TextWrapped("- Fix: Secondary timer wouldn't show when reading 0 (before 1st cp).");
+            UI::TextWrapped("- Added warning when the game has so many ghosts loaded that it can cause lag. (2.1.16)");
         }
         UI::EndChild();
     }

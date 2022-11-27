@@ -431,8 +431,8 @@ namespace KoBufferUI {
         bool isFinish = currSeq == CGamePlaygroundUIConfig::EUISequence::Finish;
         bool isEndRound = currSeq != CGamePlaygroundUIConfig::EUISequence::EndRound;
         bool skipSequence = !isPlaying && !isFinish && !isEndRound;
+        if (skipSequence) return;
         if (!g_koBufferUIVisible
-            || skipSequence
             || (S_ShowOnlyWhenInterfaceHidden && UI::IsGameUIVisible())
             || (S_ShowOnlyWhenInterfaceVisible && !UI::IsGameUIVisible())
         ) {
@@ -471,9 +471,9 @@ namespace KoBufferUI {
         return key;
     }
 
-    const string GetGhostsMap(const MLFeed::GhostInfo@ g) {
+    const string GetGhostsMap(const string &in key) {
         string outStr;
-        if (ghostFirstSeenMap.Get(KeyForGhost(g), outStr)) {
+        if (ghostFirstSeenMap.Get(key, outStr)) {
             return outStr;
         }
         return "";
@@ -493,6 +493,8 @@ namespace KoBufferUI {
 
     array<const MLFeed::GhostInfo@> _ghosts;
     uint lastNbGhosts = 0;
+    dictionary seenGhosts;
+    uint highestGhostIdSeen = 0;
 
     void Reset_TA() {
         @ta_playerTime = null;
@@ -507,24 +509,32 @@ namespace KoBufferUI {
         @secondaryGhostRaw = null;
         @tertiaryGhostRaw = null;
         _ghosts.RemoveRange(0, _ghosts.Length);
+        seenGhosts.DeleteAll();
         lastNbGhosts = 0;
+        highestGhostIdSeen = 0;
     }
 
     bool UpdateGhosts() {
         if (GetApp().RootMap is null) return false;
         auto GD = MLFeed::GetGhostData();
         if (lastNbGhosts != GD.NbGhosts) {
+            auto start_time = Time::Now;
             lastNbGhosts = GD.NbGhosts;
-            _ghosts.RemoveRange(0, _ghosts.Length);
-            dictionary seenGhosts;
+            // _ghosts.RemoveRange(0, _ghosts.Length);
             string key;
             for (uint i = 0; i < GD.Ghosts.Length; i++) {
                 auto item = GD.Ghosts[i];
+                // these always increase it seems... might be an issue in future but should be okay
+                if (item.IdUint <= highestGhostIdSeen) continue;
+                highestGhostIdSeen = item.IdUint;
                 key = SeenGhostSaveMap(item);
                 if (seenGhosts.Exists(key)) continue;
                 seenGhosts[key] = true;
-                if (GetGhostsMap(item) != GetApp().RootMap.MapInfo.MapUid) continue;
+                if (GetGhostsMap(key) != GetApp().RootMap.MapInfo.MapUid) continue;
                 _ghosts.InsertLast(item);
+            }
+            if (Time::Now - start_time >= 2) {
+                warn("UpdateGhosts took " + (Time::Now - start_time) + " ms!");
             }
             return true;
         }

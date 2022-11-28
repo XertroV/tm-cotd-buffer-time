@@ -57,7 +57,7 @@ namespace Updates {
         if (UI::BeginChild("news-2022_11_29", vec2(_childWidth, 260))) {
             SubHeading("Factor-in Respawns");
             UI::TextWrapped("New setting enabled by default globally.");
-            UI::TextWrapped("When this is active, the timer will update immediately to reflect that a player respawned. This works for you and for opponents (e.g., in COTD), but not for ghosts or other reference times.");
+            UI::TextWrapped("When this is active, the timer will update immediately to reflect that a player respawned. This works for you and for opponents (e.g., in COTD), but no such data is available for ghosts or other reference times.");
             UI::TextWrapped("To disable this setting, you can use this convenient checkbox:");
             S_UpdateInstantRespawns = UI::Checkbox("Update Instantly when Players Respawn?", S_UpdateInstantRespawns);
             UI::Separator();
@@ -76,7 +76,7 @@ namespace Updates {
         Heading("v2.1.15");
         UI::Dummy(vec2(10, 0));
         UI::SameLine();
-        if (UI::BeginChild("news-2022_11_27", vec2(_childWidth, 290))) {
+        if (UI::BeginChild("news-2022_11_27", vec2(_childWidth, 300))) {
             UI::TextWrapped("Thanks to [\\$fc0" + Icons::StarO + "\\$z] AR_Down for the suggestions and bug reports.");
             UI::Separator();
 
@@ -100,9 +100,11 @@ namespace Updates {
         Heading("v2.1.13");
         UI::Dummy(vec2(10, 0));
         UI::SameLine();
-        if (UI::BeginChild("news-2022_11_23", vec2(_childWidth, 80))) {
+        if (UI::BeginChild("news-2022_11_23", vec2(_childWidth, 130))) {
             SubHeading("Hide While GPS Active");
             UI::TextWrapped("New setting: 'Hide when GPS active?'. Note: this is also active while in cam 7 due to limitations of the implementation.");
+            UI::TextWrapped("To disable this setting, you can use this convenient checkbox:");
+            S_HideWhenGPSActive = UI::Checkbox("Hide When GPS Active?", S_HideWhenGPSActive);
         }
         UI::EndChild();
     }

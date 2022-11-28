@@ -900,14 +900,18 @@ namespace KoBufferUI {
 
         auto aheadPlayer = isBehind ? targetCpInfo : localPlayer;
         auto behindPlayer = isBehind ? localPlayer : targetCpInfo;
-        uint expectedExtraCps = 0;
+        int expectedExtraCps = 0;
         if (aheadPlayer.cpCount > behindPlayer.cpCount) {
-            auto timeSinceCp = currRaceTime - behindPlayer.lastCpTimeRaw - (S_UpdateInstantRespawns ? aheadPlayer.tltr[behindPlayer.cpCount + 1] : 0);
-            auto aheadPlayersNoRespawnCpDuration =
+            int futureTimeLost = 0;
+            for (uint i = behindPlayer.cpCount; i < aheadPlayer.tltr.Length; i++) {
+                futureTimeLost += aheadPlayer.tltr[i];
+            }
+            auto timeSinceCp = currRaceTime - behindPlayer.lastCpTimeRaw; // - (S_UpdateInstantRespawns ? futureTimeLost : 0);
+            auto aheadPlayersNextCpDuration =
                 aheadPlayer.cpTimes[behindPlayer.cpCount + 1]
-                - aheadPlayer.cpTimes[behindPlayer.cpCount]
-                - (S_UpdateInstantRespawns ? aheadPlayer.tltr[behindPlayer.cpCount] : 0);
-            expectedExtraCps = Math::Max(timeSinceCp, aheadPlayersNoRespawnCpDuration);
+                - aheadPlayer.cpTimes[behindPlayer.cpCount];
+            expectedExtraCps = Math::Max(timeSinceCp, aheadPlayersNextCpDuration)
+                - (S_UpdateInstantRespawns ? futureTimeLost : 0);
             msDelta = behindPlayer.lastCpTime
                 - aheadPlayer.cpTimes[behindPlayer.cpCount + 1]
                 + expectedExtraCps;

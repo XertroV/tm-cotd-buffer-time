@@ -20,6 +20,7 @@ void Main() {
             NotifyDepError("Unknown dependency error.");
         }
     }
+    // print("Camera currnet pos: " + Camera::GetCurrentPosition().ToString());
 }
 
 

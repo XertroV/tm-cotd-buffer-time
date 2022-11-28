@@ -20,7 +20,10 @@ bool IsGPSActive() {
     if (vis is null) return false;
     auto playerPos = vis.AsyncState.Position;
     // auto playerVector = vis.AsyncState.Dir;
-    g_PlayerToCamera = playerPos - Camera::GetCurrentPosition();
+    auto camPos = Camera::GetCurrentPosition();
+    // sometimes campos is bugged; got coords (0, 1, -8.5).
+    if (camPos.LengthSquared() < 100) return false;
+    g_PlayerToCamera = playerPos - camPos;
     // Camera::IsBehind(playerPos + playerVector) ||
     bool notDriving = g_PlayerToCamera.LengthSquared() > MAX_CAMERA_DIST_SQ;
     // print("Dist: " + g_PlayerToCamera.Length() + ", and IsGPSActive: " + tostring(notDriving));

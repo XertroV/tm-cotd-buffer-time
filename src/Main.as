@@ -68,7 +68,7 @@ void OnSettingsChanged() {
 //
 void NotifyDepError(const string &in msg) {
     warn(msg);
-    UI::ShowNotification(Meta::ExecutingPlugin().Name + ": Dependency Error", msg, vec4(.9, .6, .1, .5), 15000);
+    UI::ShowNotification(Meta::ExecutingPlugin().Name + ": Dependency Error", msg + "\n\nNote: if you see this while updating multiple plugins, you can probably ignore it.", vec4(.9, .6, .1, .5), 15000);
 }
 
 void NotifyError(const string &in msg) {

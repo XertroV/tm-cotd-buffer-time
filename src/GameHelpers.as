@@ -10,6 +10,7 @@ vec3 g_PlayerToCamera;
 // - assumes UISequence is Playging
 // - will trigger when spectating a player and they go thru the finish
 // - will trigger in freecam mode
+// - bug: sometimes Camera::GetCurrentPosition is static and wrong
 bool IsGPSActive() {
     auto gameScene = GetApp().GameScene;
     if (gameScene is null) return false;
@@ -18,9 +19,10 @@ bool IsGPSActive() {
     auto vis = VehicleState::GetVis(gameScene, currPlayer);
     if (vis is null) return false;
     auto playerPos = vis.AsyncState.Position;
-    auto playerVector = vis.AsyncState.Dir;
+    // auto playerVector = vis.AsyncState.Dir;
     g_PlayerToCamera = playerPos - Camera::GetCurrentPosition();
-    bool notDriving = Camera::IsBehind(playerPos + playerVector) || g_PlayerToCamera.LengthSquared() > MAX_CAMERA_DIST_SQ;
+    // Camera::IsBehind(playerPos + playerVector) ||
+    bool notDriving = g_PlayerToCamera.LengthSquared() > MAX_CAMERA_DIST_SQ;
     // print("Dist: " + g_PlayerToCamera.Length() + ", and IsGPSActive: " + tostring(notDriving));
     return notDriving;
 }

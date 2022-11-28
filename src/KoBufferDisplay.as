@@ -69,16 +69,16 @@ namespace KoBuffer {
         return lastGM == "TM_TimeAttackDaily_Online";
     }
 
-    CSmPlayer@ get_App_CurrPlayground_GameTerminal_GUIPlayer() {
-        auto cp = cast<CSmArenaClient>(GetApp().CurrentPlayground);
+    CSmPlayer@ Get_App_CurrPlayground_GameTerminal_GUIPlayer(CGameCtnApp@ app) {
+        auto cp = cast<CSmArenaClient>(app.CurrentPlayground);
         if (cp is null || cp.GameTerminals.Length < 1) return null;
         auto GameTerminal = cp.GameTerminals[0];
         if (GameTerminal is null) return null;
         return cast<CSmPlayer>(GameTerminal.GUIPlayer);
     }
 
-    string get_App_CurrPlayground_GameTerminal_GUIPlayerUserName() {
-        auto GUIPlayer = App_CurrPlayground_GameTerminal_GUIPlayer;
+    string Get_App_CurrPlayground_GameTerminal_GUIPlayerUserName(CGameCtnApp@ app) {
+        auto GUIPlayer = Get_App_CurrPlayground_GameTerminal_GUIPlayer(app);
         if (GUIPlayer is null) return "";
         return GUIPlayer.User.Name;
     }
@@ -102,14 +102,14 @@ namespace KoBuffer {
         }
     }
 
-    CSmScriptPlayer@ get_GUIPlayer_ScriptAPI() {
-        auto GUIPlayer = App_CurrPlayground_GameTerminal_GUIPlayer;
-        if (GUIPlayer is null) return null;
-        return cast<CSmScriptPlayer>(GUIPlayer.ScriptAPI);
-    }
+    // CSmScriptPlayer@ Get_GUIPlayer_ScriptAPI(CGameCtnApp@ app) {
+    //     auto GUIPlayer = Get_App_CurrPlayground_GameTerminal_GUIPlayer(app);
+    //     if (GUIPlayer is null) return null;
+    //     return cast<CSmScriptPlayer>(GUIPlayer.ScriptAPI);
+    // }
 
-    CSmPlayer@ get_App_CurrPlayground_GameTerminal_ControlledPlayer() {
-        auto cp = cast<CSmArenaClient>(GetApp().CurrentPlayground);
+    CSmPlayer@ Get_App_CurrPlayground_GameTerminal_ControlledPlayer(CGameCtnApp@ app) {
+        auto cp = cast<CSmArenaClient>(app.CurrentPlayground);
         if (cp is null || cp.GameTerminals.Length < 1) return null;
         auto GameTerminal = cp.GameTerminals[0];
         if (GameTerminal is null) return null;
@@ -251,6 +251,10 @@ namespace KoBufferUI {
             }
             UI::EndMenu();
         }
+
+        if (UI::MenuItem("Update Instantly when Players Respawn?", "", S_UpdateInstantRespawns))
+            S_UpdateInstantRespawns = !S_UpdateInstantRespawns;
+
         UI::Separator();
     }
 
@@ -602,14 +606,13 @@ namespace KoBufferUI {
     void Render_TA() {
         auto crt = KoBuffer::GetCurrentRaceTime(GetApp());
 
-        auto ghostData = MLFeed::GetGhostData();
-        auto raceData = MLFeed::GetRaceData();
+        auto raceData = MLFeed::GetRaceData_V2();
         auto playerName = KoBuffer::Get_GameTerminal_Player_UserName(GetApp());
         auto physicalPlayersName = KoBuffer::Get_GameTerminal_ControlledPlayer_UserName(GetApp());
         auto isSpectating = playerName != physicalPlayersName;
         if (S_TA_HideWhenSpectating && isSpectating) return;
         // trace(tostring(isSpectating));
-        auto localPlayer = raceData.GetPlayer(playerName);
+        auto localPlayer = raceData.GetPlayer_V2(playerName);
         if (localPlayer is null) return;
 
 
@@ -774,24 +777,24 @@ namespace KoBufferUI {
         // calc player's position relative to ko position
         // target: either player right before or after ko pos
         // if (koFeedHook is null || theHook is null) return;
-        auto theHook = MLFeed::GetRaceData();
+        auto theHook = MLFeed::GetRaceData_V2();
         auto koFeedHook = MLFeed::GetKoData();
 
+        if (koFeedHook.RoundNb <= 0) return;
         if (!Setting_SafeIndicatorInNoKO) {
-            // if (koFeedHook.RoundNb == 0) return;
             if (koFeedHook.KOsNumber == 0) return;
         }
 
-        string localUser = KoBuffer::App_CurrPlayground_GameTerminal_GUIPlayerUserName; GetApp(); // review helper
+        string localUser = KoBuffer::Get_App_CurrPlayground_GameTerminal_GUIPlayerUserName(GetApp());
         uint nPlayers = koFeedHook.PlayersNb;
         uint nKOs = koFeedHook.KOsNumber;
         uint preCutoffRank = nPlayers - nKOs;
         uint postCutoffRank = preCutoffRank + 1;
         uint nbDNFs = 0; // used to track how many DNFs/non-existent players are before the cutoff ranks
-        MLFeed::PlayerCpInfo@ preCpInfo = null;
-        MLFeed::PlayerCpInfo@ postCpInfo = null;
-        MLFeed::PlayerCpInfo@ localPlayer = null;
-        auto @sorted = theHook.SortedPlayers_Race;
+        MLFeed::PlayerCpInfo_V2@ preCpInfo = null;
+        MLFeed::PlayerCpInfo_V2@ postCpInfo = null;
+        MLFeed::PlayerCpInfo_V2@ localPlayer = null;
+        auto @sorted = S_UpdateInstantRespawns ? theHook.SortedPlayers_Race_Respawns : theHook.SortedPlayers_Race;
         // todo: if postCpInfo is null it might be because there aren't enough players, so count as 0 progress?
 
         for (uint i = 0; i < sorted.Length; i++) {
@@ -805,8 +808,9 @@ namespace KoBufferUI {
             auto koPlayer = koFeedHook.GetPlayerState(player.name);
             if (koPlayer.isDNF) nbDNFs += 1;
             else { // we don't want to use a DNFd player so skip them; if one of these conditions would be true now, it would have been true for the prior player, so we don't want to overwrite it either
-                if (player.raceRank == preCutoffRank + nbDNFs) @preCpInfo = player;
-                if (player.raceRank == postCutoffRank + nbDNFs) @postCpInfo = player;
+                auto rank = S_UpdateInstantRespawns ? player.RaceRespawnRank : player.RaceRank;
+                if (rank == preCutoffRank + nbDNFs) @preCpInfo = player;
+                if (rank == postCutoffRank + nbDNFs) @postCpInfo = player;
             }
 
             if (localPlayer !is null && postCpInfo !is null) break; // got everything we need
@@ -828,15 +832,17 @@ namespace KoBufferUI {
         }
     }
 
-    BufferTime@ CalcBufferTime_KO(const MLFeed::RaceDataProxy@ theHook, const MLFeed::KoDataProxy@ koFeedHook,
-                        MLFeed::PlayerCpInfo@ preCpInfo, MLFeed::PlayerCpInfo@ postCpInfo,
-                        MLFeed::PlayerCpInfo@ localPlayer,
+    BufferTime@ CalcBufferTime_KO(const MLFeed::HookRaceStatsEventsBase_V2@ theHook, const MLFeed::KoDataProxy@ koFeedHook,
+                        MLFeed::PlayerCpInfo_V2@ preCpInfo,
+                        MLFeed::PlayerCpInfo_V2@ postCpInfo,
+                        MLFeed::PlayerCpInfo_V2@ localPlayer,
                         uint postCutoffRank,
                         bool drawBufferTime = false
     ) {
         if (localPlayer is null) return BufferTime(0, 1, true, false, false, false, false);
         auto localPlayerState = koFeedHook.GetPlayerState(localPlayer.name);
 
+        auto lpRank = S_UpdateInstantRespawns ? localPlayer.RaceRespawnRank : localPlayer.RaceRank;
         bool localPlayerLives = localPlayerState is null || (!localPlayerState.isDNF && localPlayerState.isAlive);
         bool isAlive = localPlayerState is null || localPlayerState.isAlive;
         bool isDNF = localPlayerState !is null && localPlayerState.isDNF;
@@ -844,7 +850,7 @@ namespace KoBufferUI {
 
         if (preCpInfo is null) return BufferTime(99999, 99, false, true, false, localPlayerState.isAlive, localPlayerState.isDNF);
 
-        bool isOut = (int(localPlayer.raceRank) > koFeedHook.PlayersNb - koFeedHook.KOsNumber)
+        bool isOut = (int(lpRank) > koFeedHook.PlayersNb - koFeedHook.KOsNumber)
                 && preCpInfo.cpCount == int(theHook.CPsToFinish);
 
         bool postCpAlive = postCpInfo !is null;
@@ -855,7 +861,7 @@ namespace KoBufferUI {
             }
         }
 
-        bool isSafe = (int(localPlayer.raceRank) <= koFeedHook.PlayersNb - koFeedHook.KOsNumber)
+        bool isSafe = (int(lpRank) <= koFeedHook.PlayersNb - koFeedHook.KOsNumber)
                 && !postCpAlive && localPlayerLives;
 
         if (isOut && drawBufferTime && Setting_ShowOutIndicatorEver) {
@@ -867,18 +873,21 @@ namespace KoBufferUI {
         }
 
 
-        MLFeed::PlayerCpInfo@ targetCpInfo;
+        MLFeed::PlayerCpInfo_V2@ targetCpInfo;
         bool isBehind;
 
         // ahead of 1st player to be eliminated?
-        if (localPlayer.raceRank < postCutoffRank) @targetCpInfo = postCpInfo;
+        if (lpRank < postCutoffRank) @targetCpInfo = postCpInfo;
         else @targetCpInfo = preCpInfo; // otherwise, if at risk of elim
 
         if (targetCpInfo is null) {
             return BufferTime(99999, 99, false, localPlayerLives, !localPlayerLives, localPlayerState.isAlive, localPlayerState.isDNF);
         }
 
-        isBehind = localPlayer.raceRank > targetCpInfo.raceRank && targetCpInfo.cpCount > 0; // ranks should never be ==
+        auto tgRank = S_UpdateInstantRespawns ? targetCpInfo.RaceRespawnRank : targetCpInfo.RaceRank;
+
+        // ranks should never be ==
+        isBehind = lpRank > tgRank && (localPlayer.cpCount > 0 || localPlayer.TimeLostToRespawns > 0 || targetCpInfo.cpCount > 0);
         uint cpDelta = Math::Abs(localPlayer.cpCount - targetCpInfo.cpCount);
 
         int msDelta = CalcMsDelta(WrapPlayerCpInfo(localPlayer), isBehind, WrapPlayerCpInfo(targetCpInfo));
@@ -893,8 +902,15 @@ namespace KoBufferUI {
         auto behindPlayer = isBehind ? localPlayer : targetCpInfo;
         uint expectedExtraCps = 0;
         if (aheadPlayer.cpCount > behindPlayer.cpCount) {
-            expectedExtraCps = Math::Max(currRaceTime - behindPlayer.lastCpTime, aheadPlayer.cpTimes[behindPlayer.cpCount + 1] - aheadPlayer.cpTimes[behindPlayer.cpCount]);
-            msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount + 1] + expectedExtraCps;
+            auto timeSinceCp = currRaceTime - behindPlayer.lastCpTimeRaw - (S_UpdateInstantRespawns ? aheadPlayer.tltr[behindPlayer.cpCount + 1] : 0);
+            auto aheadPlayersNoRespawnCpDuration =
+                aheadPlayer.cpTimes[behindPlayer.cpCount + 1]
+                - aheadPlayer.cpTimes[behindPlayer.cpCount]
+                - (S_UpdateInstantRespawns ? aheadPlayer.tltr[behindPlayer.cpCount] : 0);
+            expectedExtraCps = Math::Max(timeSinceCp, aheadPlayersNoRespawnCpDuration);
+            msDelta = behindPlayer.lastCpTime
+                - aheadPlayer.cpTimes[behindPlayer.cpCount + 1]
+                + expectedExtraCps;
         } else if (aheadPlayer.cpCount < behindPlayer.cpCount) {
             // should never be true
             msDelta = 98765;
@@ -903,7 +919,8 @@ namespace KoBufferUI {
             NotifyError("Ahead Player has fewer CPs than Behind Player!");
 #endif
         } else {
-            msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount];
+            msDelta = behindPlayer.lastCpTime - aheadPlayer.cpTimes[behindPlayer.cpCount]
+                - (S_UpdateInstantRespawns ? aheadPlayer.tltr[behindPlayer.cpCount] : 0);
         }
         return msDelta;
     }
@@ -1135,22 +1152,22 @@ namespace KoBufferUI {
         if (!(S_ShowAllInfoDebug)) return;
         if (UI::Begin("KO Buffer -- All Players", S_ShowAllInfoDebug)) {
 
-            auto theHook = MLFeed::GetRaceData();
+            auto theHook = MLFeed::GetRaceData_V2();
             auto koFeedHook = MLFeed::GetKoData();
 
             int nPlayers = Math::Max(0, koFeedHook.PlayersNb);
             int nKOs = Math::Max(0, koFeedHook.KOsNumber);
             uint preCutoffRank = Math::Max(1, nPlayers - nKOs);
             uint postCutoffRank = preCutoffRank + 1;
-            MLFeed::PlayerCpInfo@ preCpInfo = null;
-            MLFeed::PlayerCpInfo@ postCpInfo = null;
-            auto @sorted = theHook.SortedPlayers_Race;
+            MLFeed::PlayerCpInfo_V2@ preCpInfo = null;
+            MLFeed::PlayerCpInfo_V2@ postCpInfo = null;
+            auto @sorted = theHook.SortedPlayers_Race_Respawns;
             for (uint i = 0; i < sorted.Length; i++) {
                 // uint currRank = i + 1;
                 auto player = sorted[i];
                 if (player is null) continue; // edge case on changing maps and things
-                if (player.raceRank == preCutoffRank) @preCpInfo = player;
-                if (player.raceRank == postCutoffRank) @postCpInfo = player;
+                if (player.RaceRespawnRank == preCutoffRank) @preCpInfo = player;
+                if (player.RaceRespawnRank == postCutoffRank) @postCpInfo = player;
             }
 
             UI::Text("nPlayers: " + nPlayers);
@@ -1195,7 +1212,7 @@ namespace KoBufferUI {
                         UI::TableNextRow();
 
                         UI::TableNextColumn();
-                        UI::Text("" + player.raceRank);
+                        UI::Text("" + player.RaceRespawnRank);
 
                         UI::TableNextColumn();
                         UI::Text("" + player.name);

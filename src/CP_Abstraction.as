@@ -1,7 +1,10 @@
 interface CPAbstraction {
     const array<int>@ get_cpTimes() const;
+    // time lost to respawns
+    const array<int>@ get_tltr() const;
     int get_cpCount() const;
     int get_lastCpTime() const;
+    int get_lastCpTimeRaw() const;
     int opCmp(const CPAbstraction@ other) const;
     string ToString() const;
 }
@@ -22,21 +25,28 @@ mixin class CPAbstractionOpCmp : CPAbstraction {
 }
 
 class WrapPlayerCpInfo : CPAbstraction, CPAbstractionOpCmp {
-    const MLFeed::PlayerCpInfo@ _inner;
-    WrapPlayerCpInfo(const MLFeed::PlayerCpInfo@ cpInfo) {
+    const MLFeed::PlayerCpInfo_V2@ _inner;
+    WrapPlayerCpInfo(const MLFeed::PlayerCpInfo_V2@ cpInfo) {
         @_inner = cpInfo;
     }
     const array<int>@ get_cpTimes() const {
         return _inner.cpTimes;
     }
+    const array<int>@ get_tltr() const {
+        return _inner.TimeLostToRespawnByCp;
+    }
     int get_cpCount() const {
         return _inner.cpCount;
     }
     int get_lastCpTime() const {
-        return _inner.lastCpTime;
+        return S_UpdateInstantRespawns ? _inner.LastCpOrRespawnTime : _inner.LastCpTime;
+    }
+    int get_lastCpTimeRaw() const {
+        return _inner.LastCpTime;
     }
 
-    void UpdateFrom(const MLFeed::PlayerCpInfo@ cpInfo) {
+
+    void UpdateFrom(const MLFeed::PlayerCpInfo_V2@ cpInfo) {
         @_inner = cpInfo;
     }
 }
@@ -51,14 +61,21 @@ class WrappedTimes : CPAbstraction, CPAbstractionOpCmp {
     int innerResultTime = -1;
     string ghostName;
     const array<uint>@ rawCheckpoints = EmptyUintArray;
+    array<int> _tltr;
 
     const array<int>@ get_cpTimes() const {
         return _cpTimes;
+    }
+    const array<int>@ get_tltr() const {
+        return _tltr;
     }
     int get_cpCount() const {
         return _cpCount;
     }
     int get_lastCpTime() const {
+        return _lastCpTime;
+    }
+    int get_lastCpTimeRaw() const {
         return _lastCpTime;
     }
 
@@ -103,6 +120,7 @@ class WrapBestTimes : WrappedTimes {
         for (uint i = 0; i < _cpTimes.Length; i++) {
             _cpTimes[i] = _inner[i];
         }
+        _tltr.Resize(_cpCount + 1);
     }
 
     void UpdateFrom(const string &in playerName, const array<uint>@ cpInfo, int crt, int minCPs) {
@@ -170,6 +188,7 @@ class WrapGhostInfo : WrappedTimes {
             _cpTimes.InsertLast(rawCheckpoints[i]);
         }
         if (_cpCount > 0) _lastCpTime = rawCheckpoints[_cpCount - 1];
+        _tltr.Resize(_cpCount + 1);
     }
 
     void UpdateFrom(const MLFeed::GhostInfo@ ghostInfo, int crt, int minCPs) {

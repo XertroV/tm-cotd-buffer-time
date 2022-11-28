@@ -30,7 +30,7 @@ bool S_ShowOnlyWhenInterfaceVisible = false;
 [Setting category="Global" name="Hide the Incredibly Useful MenuBar Item?" description="A MenuBar item will appear when Buffer Time is active. This menu contains many useful quick settings to change the behavior of Buffer Time (including disabling it for this collection of game modes)."]
 bool S_HideIncrediblyUsefulMenuBarItem = false;
 
-[Setting category="Global" name="Update Instantly when Players Respawn?" description="If true, the timer will update immediately to account for respawns (both for the local player and other players)."]
+[Setting category="Global" name="Update Instantly when Players Respawn?" description="If true, the timer will update immediately to account for respawns (both for the local player and other players). Respawn data is not available for ghosts, but is for other players (e.g., in COTD)."]
 bool S_UpdateInstantRespawns = true;
 
 

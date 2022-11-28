@@ -6,6 +6,7 @@ namespace Updates {
                 || !S_News_Viewed_2022_11_18
                 || !S_News_Viewed_2022_11_23
                 || !S_News_Viewed_2022_11_27
+                || !S_News_Viewed_2022_11_29
                 ;
         }
         set {
@@ -14,6 +15,7 @@ namespace Updates {
                 S_News_Viewed_2022_11_18 = true;
                 S_News_Viewed_2022_11_23 = true;
                 S_News_Viewed_2022_11_27 = true;
+                S_News_Viewed_2022_11_29 = true;
             }
         }
     }
@@ -36,6 +38,7 @@ namespace Updates {
             if (UI::Begin(Meta::ExecutingPlugin().Name + ": Updates!", hasUpdates, flags)) {
                 _childWidth = UI::GetWindowContentRegionWidth() - 40;
                 Heading("Buffer Time -- Latest Updates");
+                Update_2022_11_29();
                 Update_2022_11_27();
                 Update_2022_11_23();
                 Update_2022_11_18();
@@ -43,6 +46,28 @@ namespace Updates {
             }
             UI::End();
         }
+    }
+
+    void Update_2022_11_29() {
+        if (S_News_Viewed_2022_11_29) return;
+        UI::Separator();
+        Heading("v2.2.0");
+        UI::Dummy(vec2(10, 0));
+        UI::SameLine();
+        if (UI::BeginChild("news-2022_11_29", vec2(_childWidth, 260))) {
+            SubHeading("Factor-in Respawns");
+            UI::TextWrapped("New setting enabled by default globally.");
+            UI::TextWrapped("When this is active, the timer will update immediately to reflect that a player respawned. This works for you and for opponents (e.g., in COTD), but not for ghosts or other reference times.");
+            UI::TextWrapped("To disable this setting, you can use this convenient checkbox:");
+            S_UpdateInstantRespawns = UI::Checkbox("Update Instantly when Players Respawn?", S_UpdateInstantRespawns);
+            UI::Separator();
+
+            SubHeading("Bug Fixes");
+            UI::TextWrapped("- Hide during GPS: sometimes `Camera::GetCurrentPosition()` would bug out. When this is detected, the setting will be ignored and the timer will show regardless.");
+            // UI::TextWrapped("- ");
+            // UI::TextWrapped("- ");
+        }
+        UI::EndChild();
     }
 
     void Update_2022_11_27() {

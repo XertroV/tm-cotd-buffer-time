@@ -222,6 +222,9 @@ bool S_News_Viewed_2022_11_23 = false;
 [Setting category="Updates"]
 bool S_News_Viewed_2022_11_27 = false;
 
+[Setting category="Updates"]
+bool S_News_Viewed_2022_11_29 = false;
+
 
 
 /* debug stuff */

@@ -65,6 +65,12 @@ namespace KoBuffer {
             ;
     }
 
+    bool get_IsGameModeRanked() {
+        return lastGM == "TM_Teams_Matchmaking_Online"
+            || lastGM == "TM_Teams_Online"
+            ;
+    }
+
     bool get_IsGameModeCotdQuali() {
         return lastGM == "TM_TimeAttackDaily_Online";
     }
@@ -433,8 +439,8 @@ namespace KoBufferUI {
         currSeq = KoBuffer::GetUiSequence(GetApp());
         bool isPlaying = currSeq == CGamePlaygroundUIConfig::EUISequence::Playing;
         bool isFinish = currSeq == CGamePlaygroundUIConfig::EUISequence::Finish;
-        bool isEndRound = currSeq != CGamePlaygroundUIConfig::EUISequence::EndRound;
-        bool skipSequence = !isPlaying && !isFinish && !isEndRound;
+        // bool isEndRound = currSeq != CGamePlaygroundUIConfig::EUISequence::EndRound;
+        bool skipSequence = !isPlaying && !isFinish; // && !isEndRound;
         if (skipSequence) return;
         if (!g_koBufferUIVisible
             || (S_ShowOnlyWhenInterfaceHidden && UI::IsGameUIVisible())

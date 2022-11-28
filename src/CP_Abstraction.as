@@ -120,7 +120,7 @@ class WrapBestTimes : WrappedTimes {
         for (uint i = 0; i < _cpTimes.Length; i++) {
             _cpTimes[i] = _inner[i];
         }
-        _tltr.Resize(rawCheckpoints.Length + 1);
+        _tltr.Resize(rawCheckpoints.Length + 2);
     }
 
     void UpdateFrom(const string &in playerName, const array<uint>@ cpInfo, int crt, int minCPs) {
@@ -188,7 +188,7 @@ class WrapGhostInfo : WrappedTimes {
             _cpTimes.InsertLast(rawCheckpoints[i]);
         }
         if (_cpCount > 0) _lastCpTime = rawCheckpoints[_cpCount - 1];
-        _tltr.Resize(rawCheckpoints.Length + 1);
+        _tltr.Resize(rawCheckpoints.Length + 2);
     }
 
     void UpdateFrom(const MLFeed::GhostInfo@ ghostInfo, int crt, int minCPs) {

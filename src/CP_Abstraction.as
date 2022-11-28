@@ -1,7 +1,7 @@
 interface CPAbstraction {
     const array<int>@ get_cpTimes() const;
     // time lost to respawns
-    const array<int>@ get_tltr() const;
+    const int get_tltr(int i) const;
     int get_cpCount() const;
     int get_lastCpTime() const;
     int get_lastCpTimeRaw() const;
@@ -32,8 +32,8 @@ class WrapPlayerCpInfo : CPAbstraction, CPAbstractionOpCmp {
     const array<int>@ get_cpTimes() const {
         return _inner.cpTimes;
     }
-    const array<int>@ get_tltr() const {
-        return _inner.TimeLostToRespawnByCp;
+    const int get_tltr(int i) const {
+        return _inner.TimeLostToRespawnByCp[i];
     }
     int get_cpCount() const {
         return _inner.cpCount;
@@ -66,8 +66,10 @@ class WrappedTimes : CPAbstraction, CPAbstractionOpCmp {
     const array<int>@ get_cpTimes() const {
         return _cpTimes;
     }
-    const array<int>@ get_tltr() const {
-        return _tltr;
+    const int get_tltr(int i) const {
+        if (i < int(_tltr.Length))
+            return _tltr[i];
+        return 0;
     }
     int get_cpCount() const {
         return _cpCount;

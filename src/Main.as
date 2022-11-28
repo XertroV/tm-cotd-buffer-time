@@ -74,12 +74,12 @@ void NotifyDepError(const string &in msg) {
 
 void NotifyError(const string &in msg) {
     warn(msg);
-    UI::ShowNotification(Meta::ExecutingPlugin().Name + ": Error", msg, vec4(.9, .6, .1, .3), 15000);
+    UI::ShowNotification(Meta::ExecutingPlugin().Name + ": Error", msg, vec4(.9, .6, .1, .3), 10000);
 }
 
 void NotifyWarning(const string &in msg) {
     warn(msg);
-    UI::ShowNotification(Meta::ExecutingPlugin().Name + ": Warning", msg, vec4(.6, .6, .1, .3), 10000);
+    UI::ShowNotification(Meta::ExecutingPlugin().Name + ": Warning", msg, vec4(.6, .6, .1, .3), 5000);
 }
 
 void AddSimpleTooltip(const string &in msg) {

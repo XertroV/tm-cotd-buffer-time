@@ -903,7 +903,7 @@ namespace KoBufferUI {
         int expectedExtraCps = 0;
         if (aheadPlayer.cpCount > behindPlayer.cpCount) {
             int futureTimeLost = 0;
-            for (uint i = behindPlayer.cpCount; i < aheadPlayer.tltr.Length; i++) {
+            for (int i = behindPlayer.cpCount; i <= aheadPlayer.cpCount; i++) {
                 futureTimeLost += aheadPlayer.tltr[i];
             }
             auto timeSinceCp = currRaceTime - behindPlayer.lastCpTime;

@@ -906,7 +906,7 @@ namespace KoBufferUI {
             for (uint i = behindPlayer.cpCount; i < aheadPlayer.tltr.Length; i++) {
                 futureTimeLost += aheadPlayer.tltr[i];
             }
-            auto timeSinceCp = currRaceTime - behindPlayer.lastCpTimeRaw; // - (S_UpdateInstantRespawns ? futureTimeLost : 0);
+            auto timeSinceCp = currRaceTime - behindPlayer.lastCpTime;
             auto aheadPlayersNextCpDuration =
                 aheadPlayer.cpTimes[behindPlayer.cpCount + 1]
                 - aheadPlayer.cpTimes[behindPlayer.cpCount];

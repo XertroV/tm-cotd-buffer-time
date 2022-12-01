@@ -255,6 +255,9 @@ namespace KoBufferUI {
             if (UI::MenuItem("Only when UI Hidden?", "", S_FT_OnlyWhenInterfaceHidden)) {
                 S_FT_OnlyWhenInterfaceHidden = !S_FT_OnlyWhenInterfaceHidden;
             }
+            if (UI::MenuItem("Show No-Respawn Time, Too?", "", S_FT_ShowNoRespawnTime)) {
+                S_FT_ShowNoRespawnTime = !S_FT_ShowNoRespawnTime;
+            }
             UI::EndMenu();
         }
 
@@ -457,7 +460,9 @@ namespace KoBufferUI {
         if (isPlaying && S_HideWhenGPSActive && IsGPSActive()) return;
 
         bool playerFinished = ta_playerTime is null ? false : uint(ta_playerTime.cpCount) == MLFeed::GetRaceData().CPsToFinish;
+#if DEV
         // playerFinished = ta_playerTime !is null; // dev
+#endif
         if (S_ShowFinalTime && (isFinish || (isPlaying && playerFinished))) {
             RenderFinalTime();
         }
@@ -1148,8 +1153,9 @@ namespace KoBufferUI {
         nvg::TextAlign(nvg::Align::Center | nvg::Align::Middle);
 
         for (uint i = 0; i < 2; i++) {
-            if (i == 1 && toDraw2.Length == 0) break;
             if (i == 1) {
+                if (!S_FT_ShowNoRespawnTime) continue;
+                if (toDraw2.Length == 0) continue;
                 // mod settings for theoretical time
                 pos.y += fontSize * 0.75;
                 fontSize /= 2.;

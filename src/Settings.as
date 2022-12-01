@@ -95,6 +95,9 @@ float S_SecondaryTimerScale = 0.5;
 [Setting category="Final Time Display" name="Preview?" description="This will show a preview of what it will look like when your final time is shown."]
 bool S_ShowFinalTime_Preview = false;
 
+[Setting category="Final Time Display" name="Show Theoretical (No-Respawn) Time?" description="This will show your final time excluding respawns and the number of respawns along-side it."]
+bool S_FT_ShowNoRespawnTime = true;
+
 [Setting category="Final Time Display" name="Display Position" description="Origin: Top left. Values: Proportion of screen (range: 0-100%; default: (75, 25))" drag]
 vec2 S_FT_DisplayPosition = vec2(75, 25);
 

@@ -504,7 +504,7 @@ namespace KoBufferUI {
     array<const MLFeed::GhostInfo@> _ghosts;
     uint lastNbGhosts = 0;
     dictionary seenGhosts;
-    uint highestGhostIdSeen = 0;
+    int highestGhostIdSeen = -1;
 
     void Reset_TA() {
         @ta_playerTime = null;
@@ -521,7 +521,7 @@ namespace KoBufferUI {
         _ghosts.RemoveRange(0, _ghosts.Length);
         seenGhosts.DeleteAll();
         lastNbGhosts = 0;
-        highestGhostIdSeen = 0;
+        highestGhostIdSeen = -1;
     }
 
     uint lastWarnManyGhosts = 0;

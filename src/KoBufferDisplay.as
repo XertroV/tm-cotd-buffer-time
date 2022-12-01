@@ -456,7 +456,9 @@ namespace KoBufferUI {
 
         if (isPlaying && S_HideWhenGPSActive && IsGPSActive()) return;
 
-        if (S_ShowFinalTime && (isFinish || (isPlaying && ta_playerTime !is null && uint(ta_playerTime.cpCount) == MLFeed::GetRaceData().CPsToFinish))) {
+        bool playerFinished = ta_playerTime is null ? false : uint(ta_playerTime.cpCount) == MLFeed::GetRaceData().CPsToFinish;
+        // playerFinished = ta_playerTime !is null; // dev
+        if (S_ShowFinalTime && (isFinish || (isPlaying && playerFinished))) {
             RenderFinalTime();
         }
 
@@ -1035,17 +1037,19 @@ namespace KoBufferUI {
     }
 
     void DrawReferenceFinalTime(int finalTime, vec4 bufColor, bool isSecondary = false) {
-        DrawBufferTime_Inner(Time::Format(Math::Max(finalTime, 0)), bufColor, isSecondary);
+        auto font = fontChoiceToFont[uint(Setting_Font)];
+        DrawBufferTime_Inner(Time::Format(Math::Max(finalTime, 0)), bufColor, font, isSecondary);
     }
 
     void DrawBufferTime(int msDelta, bool isBehind, vec4 bufColor, bool isSecondary = false) {
+        auto font = fontChoiceToFont[uint(Setting_Font)];
         msDelta = Math::Abs(msDelta);
         nvg::Reset();
         string toDraw = GetPlusMinusFor(isBehind) + MsToSeconds(msDelta);
-        DrawBufferTime_Inner(toDraw, bufColor, isSecondary);
+        DrawBufferTime_Inner(toDraw, bufColor, font, isSecondary);
     }
 
-    void DrawBufferTime_Inner(const string &in toDraw, vec4 bufColor, bool isSecondary = false) {
+    void DrawBufferTime_Inner(const string &in toDraw, vec4 bufColor, int font, bool isSecondary = false) {
         auto screen = vec2(Draw::GetWidth(), Draw::GetHeight());
         vec2 pos = (screen * Setting_BufferDisplayPosition / vec2(100, 100));// - (size / 2);
         float fontSize = Setting_BufferFontSize;
@@ -1056,7 +1060,7 @@ namespace KoBufferUI {
             sw *= Math::Sqrt(S_SecondaryTimerScale);
         }
 
-        nvg::FontFace(fontChoiceToFont[uint(Setting_Font)]);
+        nvg::FontFace(font);
         nvg::FontSize(fontSize);
         nvg::TextAlign(nvg::Align::Center | nvg::Align::Middle);
         auto sizeWPad = nvg::TextBounds(toDraw.SubStr(0, toDraw.Length - 3) + "000") + vec2(20, 10);
@@ -1115,6 +1119,7 @@ namespace KoBufferUI {
     // this shows the final time on race completion of the player
     void DrawFinalTime() {
         string toDraw;
+        string toDraw2;
         if (S_ShowFinalTime_Preview) {
             uint64 ts = ((tsAtLoad % 86400) % 3600) * 1000 + (Time::Now % 100000);
             ts -= (ts % 1337);  // will update every 1.337 seconds with a new time
@@ -1125,8 +1130,13 @@ namespace KoBufferUI {
             if (S_FT_OnlyWhenInterfaceHidden && UI::IsGameUIVisible()) return;
             if (ta_playerTime is null) return;
             uint finalTime = uint(ta_playerTime.lastCpTime);
+            uint theoreticalTime = uint(ta_playerTime.LastTheoreticalCpTime);
             toDraw = Time::Format(finalTime);
+            if (finalTime != theoreticalTime) {
+                toDraw2 = Time::Format(theoreticalTime) + "; +" + ta_playerTime.NbRespawns;
+            }
         }
+
         nvg::Reset();
         auto screen = vec2(Draw::GetWidth(), Draw::GetHeight());
         vec2 pos = (screen * S_FT_DisplayPosition / vec2(100, 100));
@@ -1137,23 +1147,35 @@ namespace KoBufferUI {
         nvg::FontSize(fontSize);
         nvg::TextAlign(nvg::Align::Center | nvg::Align::Middle);
 
-        // "stroke"
-        if (S_FT_EnableStroke) {
-            float nCopies = 32; // this does not seem to be expensive
-            nvg::FillColor(Col_FT_Stroke);
-            for (float i = 0; i < nCopies; i++) {
-                float angle = TAU * float(i) / nCopies;
-                if (S_FT_ReplaceStrokeWithShadow)
-                    angle = TAU * S_FT_ShadowAngle / 360.;
-                vec2 offs = vec2(Math::Sin(angle), Math::Cos(angle)) * sw;
-                nvg::Text(pos + offs, toDraw);
-                if (S_FT_ReplaceStrokeWithShadow)
-                    break;
+        for (uint i = 0; i < 2; i++) {
+            if (i == 1 && toDraw2.Length == 0) break;
+            if (i == 1) {
+                // mod settings for theoretical time
+                pos.y += fontSize * 0.75;
+                fontSize /= 2.;
+                sw *= 0.67;
+                toDraw = toDraw2;
+                nvg::FontSize(fontSize);
             }
-        }
 
-        nvg::FillColor(Col_FT_Main);
-        nvg::Text(pos, toDraw);
+            // "stroke"
+            if (S_FT_EnableStroke) {
+                float nCopies = 32; // this does not seem to be expensive
+                nvg::FillColor(Col_FT_Stroke);
+                for (float i = 0; i < nCopies; i++) {
+                    float angle = TAU * float(i) / nCopies;
+                    if (S_FT_ReplaceStrokeWithShadow)
+                        angle = TAU * S_FT_ShadowAngle / 360.;
+                    vec2 offs = vec2(Math::Sin(angle), Math::Cos(angle)) * sw;
+                    nvg::Text(pos + offs, toDraw);
+                    if (S_FT_ReplaceStrokeWithShadow)
+                        break;
+                }
+            }
+
+            nvg::FillColor(Col_FT_Main);
+            nvg::Text(pos, toDraw);
+        }
     }
 
     /* DEBUG WINDOW: SHOW ALL */

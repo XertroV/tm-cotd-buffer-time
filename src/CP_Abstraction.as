@@ -44,6 +44,12 @@ class WrapPlayerCpInfo : CPAbstraction, CPAbstractionOpCmp {
     int get_lastCpTimeRaw() const {
         return _inner.LastCpTime;
     }
+    int get_LastTheoreticalCpTime() const {
+        return _inner.LastTheoreticalCpTime;
+    }
+    int get_NbRespawns() const {
+        return _inner.NbRespawnsRequested;
+    }
 
 
     void UpdateFrom(const MLFeed::PlayerCpInfo_V2@ cpInfo) {

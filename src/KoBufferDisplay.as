@@ -62,6 +62,7 @@ namespace KoBuffer {
             || lastGM == "TM_TimeAttack"
             || lastGM == "TM_TimeAttack_Debug"
             || lastGM == "TM_Campaign_Local"
+            || lastGM == "TM_PlayMap_Local"
             ;
     }
 

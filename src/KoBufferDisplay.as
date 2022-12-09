@@ -61,8 +61,8 @@ namespace KoBuffer {
             || (S_TA_ShowDuringCotdQuali && lastGM == "TM_TimeAttackDaily_Online")
             || lastGM == "TM_TimeAttack"
             || lastGM == "TM_TimeAttack_Debug"
-            || lastGM == "TM_Campaign_Local"
-            || lastGM == "TM_PlayMap_Local"
+            || (S_TA_ShowDuringLocalMode && lastGM == "TM_Campaign_Local")
+            || (S_TA_ShowDuringLocalMode && lastGM == "TM_PlayMap_Local")
             ;
     }
 
@@ -295,11 +295,14 @@ namespace KoBufferUI {
         RenderGlobalMenuMainInner();
         UI::Text("\\$bbb Time Attack / Solo Options");
         if (UI::BeginMenu("Disable Buffer Time during TA")) {
-                if (KoBuffer::IsGameModeCotdQuali) {
-                    bool disableCotdQuali = UI::MenuItem("Disable for COTD Quali");
-                    AddSimpleTooltip("You will need to re-enable it for COTD Quali in 'TA / Campaign' settings.");
-                    if (disableCotdQuali) S_TA_ShowDuringCotdQuali = false;
-                }
+                if (UI::MenuItem("Disable for COTD Quali"))
+                    S_TA_ShowDuringCotdQuali = false;
+                AddSimpleTooltip("You will need to re-enable it for COTD Quali in 'TA / Solo' settings.");
+
+                if (UI::MenuItem("Disable for Local Mode"))
+                    S_TA_ShowDuringLocalMode = false;
+                AddSimpleTooltip("You will need to re-enable it for Local Mode in 'TA / Solo' settings.");
+
                 bool disableNow = UI::MenuItem("Disable Now");
                 AddSimpleTooltip("You will need to re-enable it for TA in 'Global' settings.");
                 if (disableNow) S_ShowBufferTimeInTA = false;

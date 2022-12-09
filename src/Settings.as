@@ -139,6 +139,11 @@ bool Setting_SafeIndicatorInNoKO = true;
 
 
 
+[Setting category="TA / Solo" name="Show during COTD Qualifier?" description="If true, the buffer time will be visible during COTD qualifier. Otherwise, it will be hidden."]
+bool S_TA_ShowDuringCotdQuali = true;
+
+[Setting category="TA / Solo" name="Show during Local Mode?" description="If true, the buffer time will be visible for local games including campaign and maps launched via PlayMap or via community games like Bingo."]
+bool S_TA_ShowDuringLocalMode = true;
 
 const uint NbTaBufferTimeTypes = 6;
 enum TaBufferTimeType {
@@ -156,9 +161,6 @@ TaBufferTimeType S_TA_Priority3Type = TaBufferTimeType::VsGhost;
 
 [Setting category="TA / Solo" name="Show two buffer times?" description="If true, when both of the above options are selected, a smaller buffer time will be shown beneath/above the first. (The larger one is the one with priority.)"]
 bool S_TA_ShowTwoBufferTimes = true;
-
-[Setting category="TA / Solo" name="Show during COTD Qualifier?" description="If true, the buffer time will be visible during COTD qualifier. Otherwise, it will be hidden."]
-bool S_TA_ShowDuringCotdQuali = true;
 
 [Setting category="TA / Solo" name="Hide when Spectating?" description="When spectating, the buffer time shown will be a comparison to your PB or the best ghost, depending on priority."]
 bool S_TA_HideWhenSpectating = false;

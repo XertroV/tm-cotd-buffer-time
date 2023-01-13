@@ -966,19 +966,19 @@ namespace KoBufferUI {
         }
     }
 
-    int mediumDisplayFont = nvg::LoadFont("fonts/MontserratMono-Medium.ttf", true, true);
-    int mediumItalicDisplayFont = nvg::LoadFont("fonts/MontserratMono-MediumItalic.ttf", true, true);
-    int semiBoldDisplayFont = nvg::LoadFont("fonts/MontserratMono-SemiBold.ttf", true, true);
-    int semiBoldItalicDisplayFont = nvg::LoadFont("fonts/MontserratMono-SemiBoldItalic.ttf", true, true);
-    int boldDisplayFont = nvg::LoadFont("fonts/MontserratMono-Bold.ttf", true, true);
-    int boldItalicDisplayFont = nvg::LoadFont("fonts/MontserratMono-BoldItalic.ttf", true, true);
+    int mediumDisplayFont = nvg::LoadFont("fonts/MontserratMono-Medium.ttf", false, false);
+    int mediumItalicDisplayFont = nvg::LoadFont("fonts/MontserratMono-MediumItalic.ttf", false, false);
+    int semiBoldDisplayFont = nvg::LoadFont("fonts/MontserratMono-SemiBold.ttf", false, false);
+    int semiBoldItalicDisplayFont = nvg::LoadFont("fonts/MontserratMono-SemiBoldItalic.ttf", false, false);
+    int boldDisplayFont = nvg::LoadFont("fonts/MontserratMono-Bold.ttf", false, false);
+    int boldItalicDisplayFont = nvg::LoadFont("fonts/MontserratMono-BoldItalic.ttf", false, false);
 
-    int oswaldBoldFont = nvg::LoadFont("fonts/OswaldMono-Bold.ttf", true, true);
-    int oswaldSemiBoldFont = nvg::LoadFont("fonts/OswaldMono-SemiBold.ttf", true, true);
-    int oswaldLightFont = nvg::LoadFont("fonts/OswaldMono-Light.ttf", true, true);
-    int oswaldExtraLightFont = nvg::LoadFont("fonts/OswaldMono-ExtraLight.ttf", true, true);
-    int oswaldMediumFont = nvg::LoadFont("fonts/OswaldMono-Medium.ttf", true, true);
-    int oswaldRegularFont = nvg::LoadFont("fonts/OswaldMono-Regular.ttf", true, true);
+    int oswaldBoldFont = nvg::LoadFont("fonts/OswaldMono-Bold.ttf", false, false);
+    int oswaldSemiBoldFont = nvg::LoadFont("fonts/OswaldMono-SemiBold.ttf", false, false);
+    int oswaldLightFont = nvg::LoadFont("fonts/OswaldMono-Light.ttf", false, false);
+    int oswaldExtraLightFont = nvg::LoadFont("fonts/OswaldMono-ExtraLight.ttf", false, false);
+    int oswaldMediumFont = nvg::LoadFont("fonts/OswaldMono-Medium.ttf", false, false);
+    int oswaldRegularFont = nvg::LoadFont("fonts/OswaldMono-Regular.ttf", false, false);
 
     UI::Font@ ui_mediumDisplayFont = UI::LoadFont("fonts/MontserratMono-Medium.ttf");
     UI::Font@ ui_mediumItalicDisplayFont = UI::LoadFont("fonts/MontserratMono-MediumItalic.ttf");

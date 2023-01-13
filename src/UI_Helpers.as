@@ -1,5 +1,5 @@
-UI::Font@ headingFont = UI::LoadFont("DroidSans.ttf", 22, -1, -1, false, true);
-UI::Font@ subHeadingFont = UI::LoadFont("DroidSans.ttf", 19, -1, -1, false, true);
+UI::Font@ headingFont = UI::LoadFont("DroidSans.ttf", 26);
+UI::Font@ subHeadingFont = UI::LoadFont("DroidSans.ttf", 20);
 
 void Heading(const string &in text) {
     UI::PushFont(headingFont);

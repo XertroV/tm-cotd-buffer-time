@@ -177,8 +177,13 @@ namespace Updates {
 
             SubHeading("Fonts:");
             for (uint i = 0; i < KoBufferUI::ui_fontChoiceToFont.Length; i++) {
-                float t = float((Time::Now + i * 391) % 10000) / 1000 - 5.;
-                TextWithFontDemo(tostring(KoBufferUI::FontChoice(i)), KoBufferUI::GetPlusMinusFor(t < 0) + Text::Format("%.3f", Math::Abs(t)), KoBufferUI::ui_fontChoiceToFont[i]);
+                auto font = KoBufferUI::ui_fontChoiceToFont[i];
+                if (font !is null) {
+                    float t = float((Time::Now + i * 391) % 10000) / 1000 - 5.;
+                    TextWithFontDemo(tostring(KoBufferUI::FontChoice(i)), KoBufferUI::GetPlusMinusFor(t < 0) + Text::Format("%.3f", Math::Abs(t)), KoBufferUI::ui_fontChoiceToFont[i]);
+                } else {
+                    KoBufferUI::LoadImGuiFonts();
+                }
             }
         }
         UI::EndChild();

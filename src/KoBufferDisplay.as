@@ -980,20 +980,26 @@ namespace KoBufferUI {
     int oswaldMediumFont = nvg::LoadFont("fonts/OswaldMono-Medium.ttf", true, true);
     int oswaldRegularFont = nvg::LoadFont("fonts/OswaldMono-Regular.ttf", true, true);
 
-    UI::Font@ ui_mediumDisplayFont = UI::LoadFont("fonts/MontserratMono-Medium.ttf");
-    UI::Font@ ui_mediumItalicDisplayFont = UI::LoadFont("fonts/MontserratMono-MediumItalic.ttf");
-    UI::Font@ ui_semiBoldDisplayFont = UI::LoadFont("fonts/MontserratMono-SemiBold.ttf");
-    UI::Font@ ui_semiBoldItalicDisplayFont = UI::LoadFont("fonts/MontserratMono-SemiBoldItalic.ttf");
-    UI::Font@ ui_boldDisplayFont = UI::LoadFont("fonts/MontserratMono-Bold.ttf");
-    UI::Font@ ui_boldItalicDisplayFont = UI::LoadFont("fonts/MontserratMono-BoldItalic.ttf");
+    UI::Font@ ui_mediumDisplayFont = null;
+    UI::Font@ ui_mediumItalicDisplayFont = null;
+    UI::Font@ ui_semiBoldDisplayFont = null;
+    UI::Font@ ui_semiBoldItalicDisplayFont = null;
+    UI::Font@ ui_boldDisplayFont = null;
+    UI::Font@ ui_boldItalicDisplayFont = null;
 
-    UI::Font@ ui_oswaldBoldFont = UI::LoadFont("fonts/OswaldMono-Bold.ttf");
-    UI::Font@ ui_oswaldSemiBoldFont = UI::LoadFont("fonts/OswaldMono-SemiBold.ttf");
-    UI::Font@ ui_oswaldLightFont = UI::LoadFont("fonts/OswaldMono-Light.ttf");
-    UI::Font@ ui_oswaldExtraLightFont = UI::LoadFont("fonts/OswaldMono-ExtraLight.ttf");
-    UI::Font@ ui_oswaldMediumFont = UI::LoadFont("fonts/OswaldMono-Medium.ttf");
-    UI::Font@ ui_oswaldRegularFont = UI::LoadFont("fonts/OswaldMono-Regular.ttf");
+    UI::Font@ ui_oswaldBoldFont = null;
+    UI::Font@ ui_oswaldSemiBoldFont = null;
+    UI::Font@ ui_oswaldLightFont = null;
+    UI::Font@ ui_oswaldExtraLightFont = null;
+    UI::Font@ ui_oswaldMediumFont = null;
+    UI::Font@ ui_oswaldRegularFont = null;
 
+    bool _loadedFonts = false;
+    void LoadImGuiFonts() {
+        if (_loadedFonts) return;
+        _loadedFonts = true;
+        startnew(_LoadFonts);
+    }
 
     enum FontChoice {
         Montserrat_Medium = 0,
@@ -1040,6 +1046,48 @@ namespace KoBufferUI {
         , ui_oswaldBoldFont
         };
 
+    void _LoadFonts() {
+        @ui_mediumDisplayFont = UI::LoadFont("fonts/MontserratMono-Medium.ttf", 16, 0x002b, 0x003b);
+        sleep(500);
+        @ui_mediumItalicDisplayFont = UI::LoadFont("fonts/MontserratMono-MediumItalic.ttf", 16, 0x002b, 0x003b);
+        sleep(500);
+        @ui_semiBoldDisplayFont = UI::LoadFont("fonts/MontserratMono-SemiBold.ttf", 16, 0x002b, 0x003b);
+        sleep(500);
+        @ui_semiBoldItalicDisplayFont = UI::LoadFont("fonts/MontserratMono-SemiBoldItalic.ttf", 16, 0x002b, 0x003b);
+        sleep(500);
+        @ui_boldDisplayFont = UI::LoadFont("fonts/MontserratMono-Bold.ttf", 16, 0x002b, 0x003b);
+        sleep(500);
+        @ui_boldItalicDisplayFont = UI::LoadFont("fonts/MontserratMono-BoldItalic.ttf", 16, 0x002b, 0x003b);
+        sleep(500);
+
+        @ui_oswaldBoldFont = UI::LoadFont("fonts/OswaldMono-Bold.ttf", 16, 0x002b, 0x003b);
+        sleep(500);
+        @ui_oswaldSemiBoldFont = UI::LoadFont("fonts/OswaldMono-SemiBold.ttf", 16, 0x002b, 0x003b);
+        sleep(500);
+        @ui_oswaldLightFont = UI::LoadFont("fonts/OswaldMono-Light.ttf", 16, 0x002b, 0x003b);
+        sleep(500);
+        @ui_oswaldExtraLightFont = UI::LoadFont("fonts/OswaldMono-ExtraLight.ttf", 16, 0x002b, 0x003b);
+        sleep(500);
+        @ui_oswaldMediumFont = UI::LoadFont("fonts/OswaldMono-Medium.ttf", 16, 0x002b, 0x003b);
+        sleep(500);
+        @ui_oswaldRegularFont = UI::LoadFont("fonts/OswaldMono-Regular.ttf", 16, 0x002b, 0x003b);
+        sleep(500);
+
+        ui_fontChoiceToFont =
+        { ui_mediumDisplayFont
+        , ui_mediumItalicDisplayFont
+        , ui_semiBoldDisplayFont
+        , ui_semiBoldItalicDisplayFont
+        , ui_boldDisplayFont
+        , ui_boldItalicDisplayFont
+        , ui_oswaldExtraLightFont
+        , ui_oswaldLightFont
+        , ui_oswaldRegularFont
+        , ui_oswaldMediumFont
+        , ui_oswaldSemiBoldFont
+        , ui_oswaldBoldFont
+        };
+    }
 
     string GetPlusMinusFor(bool isBehind) {
         return (isBehind ^^ Setting_SwapPlusMinus) ? "-" : "+";
@@ -1172,8 +1220,8 @@ namespace KoBufferUI {
             if (S_FT_EnableStroke) {
                 float nCopies = 32; // this does not seem to be expensive
                 nvg::FillColor(Col_FT_Stroke);
-                for (float i = 0; i < nCopies; i++) {
-                    float angle = TAU * float(i) / nCopies;
+                for (float j = 0; j < nCopies; j++) {
+                    float angle = TAU * float(j) / nCopies;
                     if (S_FT_ReplaceStrokeWithShadow)
                         angle = TAU * S_FT_ShadowAngle / 360.;
                     vec2 offs = vec2(Math::Sin(angle), Math::Cos(angle)) * sw;

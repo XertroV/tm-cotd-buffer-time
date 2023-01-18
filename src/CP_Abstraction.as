@@ -33,6 +33,7 @@ class WrapPlayerCpInfo : CPAbstraction, CPAbstractionOpCmp {
         return _inner.cpTimes;
     }
     const int get_tltr(int i) const {
+        if (i > _inner.TimeLostToRespawnByCp.Length) return 0;
         return _inner.TimeLostToRespawnByCp[i];
     }
     int get_cpCount() const {

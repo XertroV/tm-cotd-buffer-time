@@ -994,13 +994,6 @@ namespace KoBufferUI {
     UI::Font@ ui_oswaldMediumFont = null;
     UI::Font@ ui_oswaldRegularFont = null;
 
-    bool _loadedFonts = false;
-    void LoadImGuiFonts() {
-        if (_loadedFonts) return;
-        _loadedFonts = true;
-        startnew(_LoadFonts);
-    }
-
     enum FontChoice {
         Montserrat_Medium = 0,
         Montserrat_Medium_Italic,
@@ -1046,47 +1039,40 @@ namespace KoBufferUI {
         , ui_oswaldBoldFont
         };
 
+    bool _loadedFonts = false;
+    void LoadImGuiFonts() {
+        if (_loadedFonts) return;
+        _loadedFonts = true;
+        startnew(_LoadFonts);
+    }
+
     void _LoadFonts() {
-        @ui_mediumDisplayFont = UI::LoadFont("fonts/MontserratMono-Medium.ttf", 16, 0x002b, 0x003b);
+        UI::ShowNotification(Meta::ExecutingPlugin().Name, "Loading fonts for preview. You will notice 12 stutters.", 15000);
+        sleep(250);
+        @ui_fontChoiceToFont[0] = UI::LoadFont("fonts/MontserratMono-Medium.ttf", 16, 0x002b, 0x003b);
         sleep(500);
-        @ui_mediumItalicDisplayFont = UI::LoadFont("fonts/MontserratMono-MediumItalic.ttf", 16, 0x002b, 0x003b);
+        @ui_fontChoiceToFont[1] = UI::LoadFont("fonts/MontserratMono-MediumItalic.ttf", 16, 0x002b, 0x003b);
         sleep(500);
-        @ui_semiBoldDisplayFont = UI::LoadFont("fonts/MontserratMono-SemiBold.ttf", 16, 0x002b, 0x003b);
+        @ui_fontChoiceToFont[2] = UI::LoadFont("fonts/MontserratMono-SemiBold.ttf", 16, 0x002b, 0x003b);
         sleep(500);
-        @ui_semiBoldItalicDisplayFont = UI::LoadFont("fonts/MontserratMono-SemiBoldItalic.ttf", 16, 0x002b, 0x003b);
+        @ui_fontChoiceToFont[3] = UI::LoadFont("fonts/MontserratMono-SemiBoldItalic.ttf", 16, 0x002b, 0x003b);
         sleep(500);
-        @ui_boldDisplayFont = UI::LoadFont("fonts/MontserratMono-Bold.ttf", 16, 0x002b, 0x003b);
+        @ui_fontChoiceToFont[4] = UI::LoadFont("fonts/MontserratMono-Bold.ttf", 16, 0x002b, 0x003b);
         sleep(500);
-        @ui_boldItalicDisplayFont = UI::LoadFont("fonts/MontserratMono-BoldItalic.ttf", 16, 0x002b, 0x003b);
-        sleep(500);
-
-        @ui_oswaldBoldFont = UI::LoadFont("fonts/OswaldMono-Bold.ttf", 16, 0x002b, 0x003b);
-        sleep(500);
-        @ui_oswaldSemiBoldFont = UI::LoadFont("fonts/OswaldMono-SemiBold.ttf", 16, 0x002b, 0x003b);
-        sleep(500);
-        @ui_oswaldLightFont = UI::LoadFont("fonts/OswaldMono-Light.ttf", 16, 0x002b, 0x003b);
-        sleep(500);
-        @ui_oswaldExtraLightFont = UI::LoadFont("fonts/OswaldMono-ExtraLight.ttf", 16, 0x002b, 0x003b);
-        sleep(500);
-        @ui_oswaldMediumFont = UI::LoadFont("fonts/OswaldMono-Medium.ttf", 16, 0x002b, 0x003b);
-        sleep(500);
-        @ui_oswaldRegularFont = UI::LoadFont("fonts/OswaldMono-Regular.ttf", 16, 0x002b, 0x003b);
+        @ui_fontChoiceToFont[5] = UI::LoadFont("fonts/MontserratMono-BoldItalic.ttf", 16, 0x002b, 0x003b);
         sleep(500);
 
-        ui_fontChoiceToFont =
-        { ui_mediumDisplayFont
-        , ui_mediumItalicDisplayFont
-        , ui_semiBoldDisplayFont
-        , ui_semiBoldItalicDisplayFont
-        , ui_boldDisplayFont
-        , ui_boldItalicDisplayFont
-        , ui_oswaldExtraLightFont
-        , ui_oswaldLightFont
-        , ui_oswaldRegularFont
-        , ui_oswaldMediumFont
-        , ui_oswaldSemiBoldFont
-        , ui_oswaldBoldFont
-        };
+        @ui_fontChoiceToFont[6] = UI::LoadFont("fonts/OswaldMono-Bold.ttf", 16, 0x002b, 0x003b);
+        sleep(500);
+        @ui_fontChoiceToFont[7] = UI::LoadFont("fonts/OswaldMono-SemiBold.ttf", 16, 0x002b, 0x003b);
+        sleep(500);
+        @ui_fontChoiceToFont[8] = UI::LoadFont("fonts/OswaldMono-Light.ttf", 16, 0x002b, 0x003b);
+        sleep(500);
+        @ui_fontChoiceToFont[9] = UI::LoadFont("fonts/OswaldMono-ExtraLight.ttf", 16, 0x002b, 0x003b);
+        sleep(500);
+        @ui_fontChoiceToFont[10] = UI::LoadFont("fonts/OswaldMono-Medium.ttf", 16, 0x002b, 0x003b);
+        sleep(500);
+        @ui_fontChoiceToFont[11] = UI::LoadFont("fonts/OswaldMono-Regular.ttf", 16, 0x002b, 0x003b);
     }
 
     string GetPlusMinusFor(bool isBehind) {

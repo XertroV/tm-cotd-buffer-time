@@ -878,7 +878,6 @@ namespace KoBufferUI {
         auto @players = raceData.SortedPlayers_Race_Respawns;
         // int nbPlayers = raceData.SortedPlayers_Race_Respawns.Length;
 
-        array<const MLFeed::MatchMakingPlayer_V1@> sortedMMPlayers;
         mm_finishedTeamOrder.RemoveRange(0, mm_finishedTeamOrder.Length);
         int playerIx = -1;
         // not really used atm
@@ -886,17 +885,14 @@ namespace KoBufferUI {
         int mvpPlayerIx = -1;
         bool ctrlPlayerFinished = true;
         for (uint i = 0; i < players.Length; i++) {
-            auto player = players[i];
-            auto mmPlayer = teamsData.GetPlayer_V1(player.Name);
-            if (mmPlayer is null) continue;
+            auto player = cast<MLFeed::PlayerCpInfo_V4>(players[i]);
             // if (player.Name == controlledPlayer.User.Name) playerIx = i;
             if (player.IsLocalPlayer) {
                 ctrlPlayerIx = i;
-                ctrlPlayerFinished = player.CpCount >= raceData.CPsToFinish;
+                ctrlPlayerFinished = player.CpCount >= int(raceData.CPsToFinish);
             }
             if (player.Name == teamsData.MvpName) mvpPlayerIx = i;
-            mm_finishedTeamOrder.InsertLast(mmPlayer.TeamNum);
-            sortedMMPlayers.InsertLast(mmPlayer);
+            mm_finishedTeamOrder.InsertLast(player.TeamNum);
         }
         playerIx = ctrlPlayerIx;
         bool lastUiSeqEndRound = lastUiSeq == CGamePlaygroundUIConfig::EUISequence::EndRound;
@@ -913,9 +909,8 @@ namespace KoBufferUI {
             auto mvpNextPoints = 0;
             auto mvpNextIx = -1;
             auto playerPoints = 0;
-            auto playerIx = -1;
-            for (uint i = 0; i < teamsData.AllPlayers.Length; i++) {
-                auto player = teamsData.AllPlayers[i];
+            for (uint i = 0; i < players.Length; i++) {
+                auto player = cast<MLFeed::PlayerCpInfo_V4>(players[i]);
                 auto roundPoints = (isEndRound || lastUiSeqEndRound) ? 0 : player.RoundPoints;
                 auto totalPoints = player.Points + roundPoints;
                 if (player.TeamNum == 1) bluePoints += player.RoundPoints;
@@ -952,13 +947,13 @@ namespace KoBufferUI {
             return;
         }
 
-        auto playersTeam = sortedMMPlayers[playerIx].TeamNum;
-        auto nbPlayers = sortedMMPlayers.Length;
+        auto playersTeam = cast<MLFeed::PlayerCpInfo_V4>(players[playerIx]).TeamNum;
+        auto nbPlayers = players.Length;
         auto otherTeam = playersTeam == 1 ? 2 : 1;
         // have to be ahead if we can draw, and there are no draws when unbalanced.
         auto teamWinning = mm_teamTotals[playersTeam] > mm_teamTotals[otherTeam]
             || (teamsData.TeamsUnbalanced && mm_teamTotals[playersTeam] == mm_teamTotals[otherTeam]
-                && sortedMMPlayers[0].TeamNum == playersTeam);
+                && cast<MLFeed::PlayerCpInfo_V4>(players[0]).TeamNum == playersTeam);
         int dir = teamWinning ? 1 : -1;
         bool untilWinning = !teamWinning;
         int lastI = playerIx;

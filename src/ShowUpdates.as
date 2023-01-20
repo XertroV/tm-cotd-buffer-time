@@ -54,15 +54,24 @@ namespace Updates {
     void Update_2023_01_20() {
         if (S_News_Viewed_2023_01_20) return;
         UI::Separator();
-        Heading("v2.2.0");
+        Heading("v2.3.0");
         UI::Dummy(vec2(10, 0));
         UI::SameLine();
         if (UI::BeginChild("news-2023_01_20", vec2(_childWidth, 420))) {
             SubHeading("Teams Matchmaking Support");
             UI::TextWrapped("In matchmaking, Buffer Time can show you how much time you can gain/lose before your change in position would win/lose your team the match.");
             UI::TextWrapped("This assumes that all the other players stay in their current positions, which updates when a player passes a checkpoint or respawns.");
-            UI::TextWrapped("If your team mates gain or lose ranks, the buffer time will update automatically.");
+            UI::TextWrapped("If your teammates gain or lose positions, the buffer time will update automatically.");
             S_ShowBufferTimeInMM = UI::Checkbox("Show Buffer Time in Matchmaking Games?", S_ShowBufferTimeInMM);
+            UI::TextWrapped("\\$fb3Note:\\$z sometimes, a meaningful buffer time cannot be shown. e.g., When you are first but your team will lose, or when you are last but your team will win. In these cases you will see a green or red 99.999, indicating that you cannot win/lose unless other teammates change position.");
+            UI::Separator();
+            UI::TextWrapped("Buffer Time can also show a secondary timer with your delta between your time and the time of the MVP player, and, after you finish, a live delta in your overall points for MVP.");
+            S_MM_ShowMvpDelta = UI::Checkbox("Show Buffer Time compared to MVP player?", S_MM_ShowMvpDelta);
+            S_MM_ShowMvpPointsDelta = UI::Checkbox("Show Points Delta?", S_MM_ShowMvpPointsDelta);
+
+            SubHeading("Bug Fixes");
+            UI::TextWrapped("- In TA, if the timer is disabled when the UI is off, the menu would not show reference times. (Which was confusing since they say 'null' even thought a timer would show up.)");
+
             // todo
             // !
         }

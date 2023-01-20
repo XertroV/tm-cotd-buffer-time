@@ -57,7 +57,7 @@ namespace Updates {
         Heading("v2.3.0");
         UI::Dummy(vec2(10, 0));
         UI::SameLine();
-        if (UI::BeginChild("news-2023_01_20", vec2(_childWidth, 420))) {
+        if (UI::BeginChild("news-2023_01_20", vec2(_childWidth, 470))) {
             SubHeading("Teams Matchmaking Support");
             UI::TextWrapped("In matchmaking, Buffer Time can show you how much time you can gain/lose before your change in position would win/lose your team the match.");
             UI::TextWrapped("This assumes that all the other players stay in their current positions, which updates when a player passes a checkpoint or respawns.");

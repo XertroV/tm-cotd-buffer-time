@@ -2,7 +2,7 @@
 name     = "Buffer Time"
 author   = "XertroV"
 category = "MLHook"
-version  = "2.2.6"
+version  = "2.2.7"
 
 [script]
 #__DEFINES__

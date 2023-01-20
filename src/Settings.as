@@ -178,22 +178,22 @@ bool S_TA_ShowFinalTimeAtStart = true;
 vec4 S_TA_FinalRefTimeColor = vec4(1, 1, 1, 1);
 
 
-[Setting category="MM / Ranked" name="Preview Team Scores" description="Show a preview for 'End of round: Team Scores'."]
-bool S_ShowTeamScores_Preview = false;
+// [Setting category="MM / Ranked" name="Preview Team Scores" description="Show a preview for 'End of round: Team Scores'."]
+// bool S_ShowTeamScores_Preview = false;
 
-[Setting category="MM / Ranked" name="Preview Overall Team Points" description="Show a preview for 'End of round: Overall Team Points'."]
-bool S_ShowTeamPoints_Preview = false;
+// [Setting category="MM / Ranked" name="Preview Overall Team Points" description="Show a preview for 'End of round: Overall Team Points'."]
+// bool S_ShowTeamPoints_Preview = false;
 
 [Setting category="MM / Ranked" name="Preview MVP points buffer" description="Show a preview for 'End of round: MVP points buffer'."]
 bool S_ShowMvpDelta_Preview = true;
 
-[Setting category="MM / Ranked" name="End of round: Overall Team Points" description="End of round: show each team's points"]
-bool S_MM_ShowTeamPoints = true;
+// [Setting category="MM / Ranked" name="End of round: Overall Team Points" description="End of round: show each team's points"]
+// bool S_MM_ShowTeamPoints = true;
 
 [Setting category="MM / Ranked" name="End of round: MVP points buffer" description="End of round: show your buffer in points for MVP (in secondary position)."]
 bool S_MM_ShowMvpPointsDelta = true;
 
-[Setting category="MM / Ranked" name="Show Buffer Time to MVP player (secondary)" description="When true, a secondary timer will show the delta to the MVP player when it's not you."]
+[Setting category="MM / Ranked" name="During round: Show Buffer Time to MVP player (secondary)" description="When true, a secondary timer will show the delta to the MVP player when it's not you."]
 bool S_MM_ShowMvpDelta = true;
 
 
@@ -253,6 +253,9 @@ bool S_News_Viewed_2022_11_27 = false;
 
 [Setting category="Updates"]
 bool S_News_Viewed_2022_11_29 = false;
+
+[Setting category="Updates"]
+bool S_News_Viewed_2023_01_20 = false;
 
 
 

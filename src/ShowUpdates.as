@@ -7,6 +7,7 @@ namespace Updates {
                 || !S_News_Viewed_2022_11_23
                 || !S_News_Viewed_2022_11_27
                 || !S_News_Viewed_2022_11_29
+                || !S_News_Viewed_2023_01_20
                 ;
         }
         set {
@@ -16,6 +17,7 @@ namespace Updates {
                 S_News_Viewed_2022_11_23 = true;
                 S_News_Viewed_2022_11_27 = true;
                 S_News_Viewed_2022_11_29 = true;
+                S_News_Viewed_2023_01_20 = true;
             }
         }
     }
@@ -38,6 +40,7 @@ namespace Updates {
             if (UI::Begin(Meta::ExecutingPlugin().Name + ": Updates!", hasUpdates, flags)) {
                 _childWidth = UI::GetWindowContentRegionWidth() - 40;
                 Heading("Buffer Time -- Latest Updates");
+                Update_2023_01_20();
                 Update_2022_11_29();
                 Update_2022_11_27();
                 Update_2022_11_23();
@@ -46,6 +49,24 @@ namespace Updates {
             }
             UI::End();
         }
+    }
+
+    void Update_2023_01_20() {
+        if (S_News_Viewed_2023_01_20) return;
+        UI::Separator();
+        Heading("v2.2.0");
+        UI::Dummy(vec2(10, 0));
+        UI::SameLine();
+        if (UI::BeginChild("news-2023_01_20", vec2(_childWidth, 420))) {
+            SubHeading("Teams Matchmaking Support");
+            UI::TextWrapped("In matchmaking, Buffer Time can show you how much time you can gain/lose before your change in position would win/lose your team the match.");
+            UI::TextWrapped("This assumes that all the other players stay in their current positions, which updates when a player passes a checkpoint or respawns.");
+            UI::TextWrapped("If your team mates gain or lose ranks, the buffer time will update automatically.");
+            S_ShowBufferTimeInMM = UI::Checkbox("Show Buffer Time in Matchmaking Games?", S_ShowBufferTimeInMM);
+            // todo
+            // !
+        }
+        UI::EndChild();
     }
 
     void Update_2022_11_29() {

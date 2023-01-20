@@ -220,6 +220,8 @@ namespace KoBufferUI {
             else if (KoBuffer::IsGameModeTA) RenderTaMenuMainInner();
             else if (KoBuffer::IsGameModeMM) RenderMmMenuMainInner();
             else RenderUnknownMenuMainInner();
+            // UI::Separator();
+            // RenderMmMenuMainInner();
             UI::EndMenu();
         }
     }
@@ -299,25 +301,36 @@ namespace KoBufferUI {
 
     void RenderMmMenuMainInner() {
         RenderGlobalMenuMainInner();
-        UI::Text("\\$bbb MM / Teams Options");
-        UI::Text("\\$bbb -- None --");
+        UI::Text("\\$bbb MM / Ranked Options");
+        if (UI::BeginMenu("Disable Buffer Time during MM")) {
+            bool disableNow = UI::MenuItem("Disable Now");
+            AddSimpleTooltip("You will need to re-enable it for TA in 'Global' settings.");
+            if (disableNow) S_ShowBufferTimeInMM = false;
+            UI::EndMenu();
+        }
+
+        if (UI::MenuItem("Show delta to MVP player? (secondary)", "", S_MM_ShowMvpDelta))
+            S_MM_ShowMvpDelta = !S_MM_ShowMvpDelta;
+
+        if (UI::MenuItem("Show MVP points delta? (round end)", "", S_MM_ShowMvpPointsDelta))
+            S_MM_ShowMvpPointsDelta = !S_MM_ShowMvpPointsDelta;
     }
 
     void RenderTaMenuMainInner() {
         RenderGlobalMenuMainInner();
         UI::Text("\\$bbb Time Attack / Solo Options");
         if (UI::BeginMenu("Disable Buffer Time during TA")) {
-                if (UI::MenuItem("Disable for COTD Quali"))
-                    S_TA_ShowDuringCotdQuali = false;
-                AddSimpleTooltip("You will need to re-enable it for COTD Quali in 'TA / Solo' settings.");
+            if (UI::MenuItem("Disable for COTD Quali"))
+                S_TA_ShowDuringCotdQuali = false;
+            AddSimpleTooltip("You will need to re-enable it for COTD Quali in 'TA / Solo' settings.");
 
-                if (UI::MenuItem("Disable for Local Mode"))
-                    S_TA_ShowDuringLocalMode = false;
-                AddSimpleTooltip("You will need to re-enable it for Local Mode in 'TA / Solo' settings.");
+            if (UI::MenuItem("Disable for Local Mode"))
+                S_TA_ShowDuringLocalMode = false;
+            AddSimpleTooltip("You will need to re-enable it for Local Mode in 'TA / Solo' settings.");
 
-                bool disableNow = UI::MenuItem("Disable Now");
-                AddSimpleTooltip("You will need to re-enable it for TA in 'Global' settings.");
-                if (disableNow) S_ShowBufferTimeInTA = false;
+            bool disableNow = UI::MenuItem("Disable Now");
+            AddSimpleTooltip("You will need to re-enable it for TA in 'Global' settings.");
+            if (disableNow) S_ShowBufferTimeInTA = false;
             UI::EndMenu();
         }
 
@@ -450,9 +463,9 @@ namespace KoBufferUI {
         if (S_ShowMvpDelta_Preview) {
             ShowMvpDeltaPreview();
         }
-        if (S_ShowTeamPoints_Preview) {
-            // ShowTeamPointsPreview();
-        }
+        // if (S_ShowTeamPoints_Preview) {
+        //     ShowTeamPointsPreview();
+        // }
         if (Setting_ShowPreview) {
             ShowPreview();
             if (Setting_ShowSecondaryPreview)
@@ -853,7 +866,8 @@ namespace KoBufferUI {
         auto teamsData = MLFeed::GetTeamsMMData_V1();
 
         if (teamsData.WarmUpIsActive
-            || teamsData.RoundNumber < 0
+            || teamsData.RoundNumber < 1
+            || teamsData.StartNewRace < 1
             || teamsData.PointsRepartition.Length == 0) {
             return;
         }
@@ -941,7 +955,10 @@ namespace KoBufferUI {
         auto playersTeam = sortedMMPlayers[playerIx].TeamNum;
         auto nbPlayers = sortedMMPlayers.Length;
         auto otherTeam = playersTeam == 1 ? 2 : 1;
-        auto teamWinning = mm_teamTotals[playersTeam] > mm_teamTotals[otherTeam];
+        // have to be ahead if we can draw, and there are no draws when unbalanced.
+        auto teamWinning = mm_teamTotals[playersTeam] > mm_teamTotals[otherTeam]
+            || (teamsData.TeamsUnbalanced && mm_teamTotals[playersTeam] == mm_teamTotals[otherTeam]
+                && sortedMMPlayers[0].TeamNum == playersTeam);
         int dir = teamWinning ? 1 : -1;
         bool untilWinning = !teamWinning;
         int lastI = playerIx;

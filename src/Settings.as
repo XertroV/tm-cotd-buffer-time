@@ -12,7 +12,7 @@ bool S_ShowFinalTime = true;
 [Setting category="Global" name="Hide when GPS playing?" description="When you're detected to be watching a GPS, the timer will be hidden."]
 bool S_HideWhenGPSActive = true;
 
-[Setting category="Global" name="Show Final TIme only when Interface Hidden?" description="The final time will show only when the interface is hidden."]
+[Setting category="Global" name="Show Final Time only when Interface Hidden?" description="The final time will show only when the interface is hidden."]
 bool S_FT_OnlyWhenInterfaceHidden = true;
 
 [Setting category="Global" name="Show Buffer Time during TA / Solo?"]
@@ -20,6 +20,9 @@ bool S_ShowBufferTimeInTA = true;
 
 [Setting category="Global" name="Show Buffer Time during KO / COTD KO?"]
 bool S_ShowBufferTimeInKO = true;
+
+[Setting category="Global" name="Show Buffer Time during Ranked / Matchmaking?"]
+bool S_ShowBufferTimeInMM = true;
 
 [Setting category="Global" name="Only show Buffer Time when the Interface is Hidden?" description="Don't check both this and the below or the timer will never show."]
 bool S_ShowOnlyWhenInterfaceHidden = false;
@@ -175,6 +178,27 @@ bool S_TA_ShowFinalTimeAtStart = true;
 vec4 S_TA_FinalRefTimeColor = vec4(1, 1, 1, 1);
 
 
+[Setting category="MM / Ranked" name="Preview Team Scores" description="Show a preview for 'End of round: Team Scores'."]
+bool S_ShowTeamScores_Preview = false;
+
+[Setting category="MM / Ranked" name="Preview Overall Team Points" description="Show a preview for 'End of round: Overall Team Points'."]
+bool S_ShowTeamPoints_Preview = false;
+
+[Setting category="MM / Ranked" name="Preview MVP points buffer" description="Show a preview for 'End of round: MVP points buffer'."]
+bool S_ShowMvpDelta_Preview = true;
+
+[Setting category="MM / Ranked" name="End of round: Overall Team Points" description="End of round: show each team's points"]
+bool S_MM_ShowTeamPoints = true;
+
+[Setting category="MM / Ranked" name="End of round: MVP points buffer" description="End of round: show your buffer in points for MVP (in secondary position)."]
+bool S_MM_ShowMvpPointsDelta = true;
+
+[Setting category="MM / Ranked" name="Show Buffer Time to MVP player (secondary)" description="When true, a secondary timer will show the delta to the MVP player when it's not you."]
+bool S_MM_ShowMvpDelta = true;
+
+
+
+
 array<TaBufferTimeType> _S_TA_PriorPriorities = {TaBufferTimeType::YourBestTime, TaBufferTimeType::YourPB, TaBufferTimeType::VsGhost};
 
 
@@ -240,6 +264,9 @@ bool S_ShowAllInfoDebug = false;
 
 [Setting category="Debug Screens" name="Show TA State Debug" description="Shows which reference ghosts/times are used atm."]
 bool S_ShowDebug_TA_State = false;
+
+[Setting category="Debug Screens" name="Show MM State Debug" description="Shows data for MM state."]
+bool S_ShowDebug_MM_State = false;
 
 
 

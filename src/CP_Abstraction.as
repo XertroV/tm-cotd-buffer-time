@@ -10,6 +10,7 @@ interface CPAbstraction {
 }
 
 mixin class CPAbstractionOpCmp : CPAbstraction {
+    // LT for faster player, GT for slower.
     int opCmp(const CPAbstraction@ other) const {
         if (other is null) return -1;
         if (this.cpCount > other.cpCount) return -1;
@@ -33,7 +34,7 @@ class WrapPlayerCpInfo : CPAbstraction, CPAbstractionOpCmp {
         return _inner.cpTimes;
     }
     const int get_tltr(int i) const {
-        if (i > _inner.TimeLostToRespawnByCp.Length) return 0;
+        if (i > int(_inner.TimeLostToRespawnByCp.Length)) return 0;
         return _inner.TimeLostToRespawnByCp[i];
     }
     int get_cpCount() const {

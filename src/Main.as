@@ -33,6 +33,7 @@ void Render() {
     Updates::Render();
     KoBufferUI::Render();
     KoBufferUI::Render_TA_StateDebugScreen();
+    KoBufferUI::Render_MM_StateDebugScreen();
 }
 
 void RenderInterface() {

@@ -66,6 +66,10 @@ namespace KoBuffer {
             ;
     }
 
+    bool get_IsGameModeMM() {
+        return lastGM == "TM_Teams_Matchmaking_Online";
+    }
+
     bool get_IsGameModeRanked() {
         return lastGM == "TM_Teams_Matchmaking_Online"
             || lastGM == "TM_Teams_Online"
@@ -207,12 +211,14 @@ namespace KoBufferUI {
         bool isShowing = false
             || (S_ShowBufferTimeInKO && KoBuffer::IsGameModeCotdKO)
             || (S_ShowBufferTimeInTA && KoBuffer::IsGameModeTA)
+            || (S_ShowBufferTimeInMM && KoBuffer::IsGameModeMM)
             ;
         if (!isShowing) return;
         string shortcut = Setting_ShortcutKeyEnabled ? "\\$bbb (" + tostring(Setting_ShortcutKey) + ")" : "";
         if (UI::BeginMenu("\\$faa\\$s" + menuIcon + "\\$z " + Meta::ExecutingPlugin().Name + shortcut)) {
             if (KoBuffer::IsGameModeCotdKO) RenderKoMenuMainInner();
             else if (KoBuffer::IsGameModeTA) RenderTaMenuMainInner();
+            else if (KoBuffer::IsGameModeMM) RenderMmMenuMainInner();
             else RenderUnknownMenuMainInner();
             UI::EndMenu();
         }
@@ -289,6 +295,12 @@ namespace KoBufferUI {
 
         if (UI::MenuItem("Show OUT indicator?", "", Setting_ShowOutIndicatorEver))
             Setting_ShowOutIndicatorEver = !Setting_ShowOutIndicatorEver;
+    }
+
+    void RenderMmMenuMainInner() {
+        RenderGlobalMenuMainInner();
+        UI::Text("\\$bbb MM / Teams Options");
+        UI::Text("\\$bbb -- None --");
     }
 
     void RenderTaMenuMainInner() {
@@ -430,9 +442,16 @@ namespace KoBufferUI {
     }
 
     CGamePlaygroundUIConfig::EUISequence currSeq = CGamePlaygroundUIConfig::EUISequence::None;
+    CGamePlaygroundUIConfig::EUISequence lastUiSeq = CGamePlaygroundUIConfig::EUISequence::None;
     void Render() {
         if (S_ShowFinalTime_Preview) {
             RenderFinalTime();
+        }
+        if (S_ShowMvpDelta_Preview) {
+            ShowMvpDeltaPreview();
+        }
+        if (S_ShowTeamPoints_Preview) {
+            // ShowTeamPointsPreview();
         }
         if (Setting_ShowPreview) {
             ShowPreview();
@@ -443,17 +462,22 @@ namespace KoBufferUI {
 
         if (g_DisableTillNextGameStart) return;
 
-        currSeq = KoBuffer::GetUiSequence(GetApp());
+        auto nextUiSeq = KoBuffer::GetUiSequence(GetApp());
+        if (nextUiSeq != currSeq) {
+            lastUiSeq = currSeq;
+            currSeq = nextUiSeq;
+        }
         bool isPlaying = currSeq == CGamePlaygroundUIConfig::EUISequence::Playing;
         bool isFinish = currSeq == CGamePlaygroundUIConfig::EUISequence::Finish;
-        // bool isEndRound = currSeq != CGamePlaygroundUIConfig::EUISequence::EndRound;
-        bool skipSequence = !isPlaying && !isFinish; // && !isEndRound;
+        bool isEndRound = currSeq == CGamePlaygroundUIConfig::EUISequence::EndRound;
+        bool skipSequence = !isPlaying && !isFinish && !isEndRound;
         if (skipSequence) return;
         if (!g_koBufferUIVisible
             || (S_ShowOnlyWhenInterfaceHidden && UI::IsGameUIVisible())
             || (S_ShowOnlyWhenInterfaceVisible && !UI::IsGameUIVisible())
         ) {
-            Reset_TA();
+            // if we reset here then the menu gives no feedback about the priorities of what references are used.
+            // Reset_TA();
             return;
         }
 
@@ -472,9 +496,11 @@ namespace KoBufferUI {
         }
 
         if (S_ShowBufferTimeInKO && KoBuffer::IsGameModeCotdKO)
-            Render_KO();
+            Render_KO(isPlaying, isFinish, isEndRound);
         else if (S_ShowBufferTimeInTA && KoBuffer::IsGameModeTA)
-            Render_TA();
+            Render_TA(isPlaying, isFinish, isEndRound);
+        else if (S_ShowBufferTimeInMM && KoBuffer::IsGameModeMM)
+            Render_MM(isPlaying, isFinish, isEndRound);
     }
 
     // track the ghosts we see and the map they're seen first on. should not be cleared.
@@ -557,7 +583,7 @@ namespace KoBufferUI {
             for (uint i = 0; i < GD.Ghosts.Length; i++) {
                 auto item = GD.Ghosts[i];
                 // these always increase it seems... might be an issue in future but should be okay
-                if (item.IdUint <= highestGhostIdSeen) continue;
+                if (int(item.IdUint) <= highestGhostIdSeen) continue;
                 highestGhostIdSeen = item.IdUint;
                 key = SeenGhostSaveMap(item);
                 if (seenGhosts.Exists(key)) continue;
@@ -620,7 +646,8 @@ namespace KoBufferUI {
     string S_TA_VsPlayerName = "XertroV";
 
     // show buffer in TA against personal best
-    void Render_TA() {
+    void Render_TA(bool isPlaying, bool isFinish, bool isEndRound) {
+        if (isEndRound) return;
         auto crt = KoBuffer::GetCurrentRaceTime(GetApp());
 
         auto raceData = MLFeed::GetRaceData_V2();
@@ -788,13 +815,214 @@ namespace KoBufferUI {
         return null;
     }
 
-    void Render_KO() {
-        if (!KoBuffer::IsGameModeCotdKO) return; GetApp(); // review helper
+    WrapPlayerCpInfo@ mm_targetTime;
+    WrapPlayerCpInfo@ mm_mvpTime;
+
+    void Render_MM_StateDebugScreen() {
+        if (!S_ShowDebug_MM_State) return;
+        UI::SetNextWindowSize(300, 200, UI::Cond::Appearing);
+        if (UI::Begin(Meta::ExecutingPlugin().Name + " - MM Debug", S_ShowDebug_MM_State)) {
+            DrawDebug_WrappedTimes("ta_playerTime", ta_playerTime);
+            DrawDebug_WrappedTimes("mm_targetTime", mm_targetTime);
+            DrawDebug_WrappedTimes("mm_mvpTime", mm_mvpTime);
+            UI::Separator();
+            UI::Text("mm_finishedTeamOrder: " + string::Join(IntsToStrs(mm_finishedTeamOrder), ", "));
+            UI::Text("mm_points: " + string::Join(IntsToStrs(mm_points), ", "));
+            UI::Text("mm_teamTotals: " + string::Join(IntsToStrs(mm_teamTotals), ", "));
+            UI::Text("mm_inflectionIx: " + mm_inflectionIx);
+            // DrawDebug_WrappedTimes("priorityGhostRaw", priorityGhostRaw);
+            // DrawDebug_WrappedTimes("secondaryGhostRaw", secondaryGhostRaw);
+            // DrawDebug_WrappedTimes("tertiaryGhostRaw", tertiaryGhostRaw);
+            // UI::Separator();
+            // DrawDebug_WrappedTimes("priorityGhost", priorityGhost);
+            // DrawDebug_WrappedTimes("secondaryGhost", secondaryGhost);
+            // DrawDebug_WrappedTimes("tertiaryGhost", tertiaryGhost);
+        }
+        UI::End();
+    }
+
+    int[] mm_finishedTeamOrder;
+    int[] mm_points;
+    int[] mm_teamTotals;
+    int mm_inflectionIx = -1;
+
+    void Render_MM(bool isPlaying, bool isFinish, bool isEndRound) {
+        if (!KoBuffer::IsGameModeMM) return;
+
+        auto raceData = MLFeed::GetRaceData_V3();
+        auto teamsData = MLFeed::GetTeamsMMData_V1();
+
+        if (teamsData.WarmUpIsActive
+            || teamsData.RoundNumber < 0
+            || teamsData.PointsRepartition.Length == 0) {
+            return;
+        }
+
+        // auto guiPlayer = KoBuffer::Get_App_CurrPlayground_GameTerminal_GUIPlayer(GetApp());
+        // auto controlledPlayer = KoBuffer::Get_App_CurrPlayground_GameTerminal_ControlledPlayer(GetApp());
+
+        auto @players = raceData.SortedPlayers_Race_Respawns;
+        // int nbPlayers = raceData.SortedPlayers_Race_Respawns.Length;
+
+        array<const MLFeed::MatchMakingPlayer_V1@> sortedMMPlayers;
+        mm_finishedTeamOrder.RemoveRange(0, mm_finishedTeamOrder.Length);
+        int playerIx = -1;
+        // not really used atm
+        int ctrlPlayerIx = -1;
+        int mvpPlayerIx = -1;
+        bool ctrlPlayerFinished = true;
+        for (uint i = 0; i < players.Length; i++) {
+            auto player = players[i];
+            auto mmPlayer = teamsData.GetPlayer_V1(player.Name);
+            if (mmPlayer is null) continue;
+            // if (player.Name == controlledPlayer.User.Name) playerIx = i;
+            if (player.IsLocalPlayer) {
+                ctrlPlayerIx = i;
+                ctrlPlayerFinished = player.CpCount >= raceData.CPsToFinish;
+            }
+            if (player.Name == teamsData.MvpName) mvpPlayerIx = i;
+            mm_finishedTeamOrder.InsertLast(mmPlayer.TeamNum);
+            sortedMMPlayers.InsertLast(mmPlayer);
+        }
+        playerIx = ctrlPlayerIx;
+        bool lastUiSeqEndRound = lastUiSeq == CGamePlaygroundUIConfig::EUISequence::EndRound;
+        // mvp points delta
+        if (ctrlPlayerFinished || isEndRound) { //  || guiPlayer is null
+            // render team points, mvp delta
+            auto blueScore = teamsData.ClanScores[1];
+            auto redScore = teamsData.ClanScores[2];
+
+            auto bluePoints = 0;
+            auto redPoints = 0;
+            auto mvpPoints = 0;
+            auto mvpIx = -1;
+            auto mvpNextPoints = 0;
+            auto mvpNextIx = -1;
+            auto playerPoints = 0;
+            auto playerIx = -1;
+            for (uint i = 0; i < teamsData.AllPlayers.Length; i++) {
+                auto player = teamsData.AllPlayers[i];
+                auto roundPoints = (isEndRound || lastUiSeqEndRound) ? 0 : player.RoundPoints;
+                auto totalPoints = player.Points + roundPoints;
+                if (player.TeamNum == 1) bluePoints += player.RoundPoints;
+                else redPoints += player.RoundPoints;
+                if (totalPoints > mvpPoints) {
+                    mvpNextPoints = mvpPoints;
+                    mvpNextIx = mvpIx;
+                    mvpPoints = totalPoints;
+                    mvpIx = i;
+                } else if (totalPoints > mvpNextPoints) {
+                    mvpNextPoints = totalPoints;
+                    mvpNextIx = i;
+                }
+                if (player.Name == MLFeed::LocalPlayersName) {
+                    playerPoints = totalPoints;
+                    playerIx = i;
+                }
+            }
+            bool playerIsMvp = mvpIx == playerIx;
+            auto mvpPointsTarget = playerIsMvp ? mvpNextPoints : mvpPoints;
+            auto delta = Math::Abs(playerPoints - mvpPointsTarget);
+            DrawMvpPointsDelta(delta, mvpPointsTarget > playerPoints);
+        }
+
+
+        teamsData.ComputePoints(mm_finishedTeamOrder, mm_points, mm_teamTotals);
+        if (mm_points.Length != mm_finishedTeamOrder.Length) {
+            warn('mm_points array and team array don\'t match');
+            return;
+        }
+
+        if (playerIx < 0 || ctrlPlayerIx < 0) {
+            warn('the gui player or local player was not found');
+            return;
+        }
+
+        auto playersTeam = sortedMMPlayers[playerIx].TeamNum;
+        auto nbPlayers = sortedMMPlayers.Length;
+        auto otherTeam = playersTeam == 1 ? 2 : 1;
+        auto teamWinning = mm_teamTotals[playersTeam] > mm_teamTotals[otherTeam];
+        int dir = teamWinning ? 1 : -1;
+        bool untilWinning = !teamWinning;
+        int lastI = playerIx;
+        mm_inflectionIx = -1;
+        for (int i = playerIx + dir; dir > 0 ? i < int(players.Length) : i >= 0; i += dir) {
+            // swap i with lastI
+            auto tmpI = mm_finishedTeamOrder[i];
+            if (tmpI != playersTeam) {
+                mm_finishedTeamOrder[i] = mm_finishedTeamOrder[lastI];
+                mm_finishedTeamOrder[lastI] = tmpI;
+                teamsData.ComputePoints(mm_finishedTeamOrder, mm_points, mm_teamTotals);
+                bool newWinning = mm_teamTotals[playersTeam] > mm_teamTotals[otherTeam];
+                if (newWinning == untilWinning) {
+                    // we hit the inflection point at index i
+                    mm_inflectionIx = i;
+                    break;
+                }
+            }
+            lastI = i;
+        }
+
+        // safe indicators test
+
+        bool teamIsBehind = !teamWinning;
+
+        auto localPlayer = players[playerIx];
+        if (ta_playerTime is null) @ta_playerTime = WrapPlayerCpInfo(localPlayer);
+        else ta_playerTime.UpdateFrom(localPlayer);
+
+        if (mm_inflectionIx < 0) {
+            mm_inflectionIx = teamWinning ? nbPlayers - 1 : 0;
+            if (mm_inflectionIx == playerIx) mm_inflectionIx = -1;
+        }
+
+        if (mm_inflectionIx < 0) {
+            // we are either too far behind or too far ahead to lose.
+            // e.g., if team order is 1,1,1,2,2,2, then even if a team 1 player DNFs their team can still win
+            // alt, no team member on team 2 can win the match for their team by coming first (would be 9 points total)
+            DrawBufferTime(99999, teamIsBehind, GetBufferTimeColor(2, teamIsBehind));
+        } else {
+            auto targetPlayer = players[mm_inflectionIx];
+            if (mm_targetTime is null) @mm_targetTime = WrapPlayerCpInfo(targetPlayer);
+            else mm_targetTime.UpdateFrom(targetPlayer);
+
+            bool isBehind = ta_playerTime > mm_targetTime;
+
+            auto msDelta = CalcMsDelta(ta_playerTime, isBehind, mm_targetTime);
+            auto cpDelta = Math::Abs(ta_playerTime.cpCount - mm_targetTime.cpCount);
+            DrawBufferTime(msDelta, isBehind, GetBufferTimeColor(cpDelta, isBehind));
+        }
+
+        if (!ctrlPlayerFinished && isPlaying && S_MM_ShowMvpDelta && mvpPlayerIx >= 0 && mvpPlayerIx != playerIx) {
+            if (mm_mvpTime is null) @mm_mvpTime = WrapPlayerCpInfo(players[mvpPlayerIx]);
+            else mm_mvpTime.UpdateFrom(players[mvpPlayerIx]);
+
+            bool isBehind = ta_playerTime > mm_mvpTime;
+
+            auto msDelta = CalcMsDelta(ta_playerTime, isBehind, mm_mvpTime);
+            auto cpDelta = Math::Abs(ta_playerTime.cpCount - mm_mvpTime.cpCount);
+            DrawBufferTime(msDelta, isBehind, GetBufferTimeColor(cpDelta, isBehind), true);
+        } else {
+            @mm_mvpTime = null;
+        }
+
+        // buffer measures time you can lose before your change in position causes your team to lose.
+        // get predicted team winner -- tells us behind or in front
+        // move the player up/down to find where the score inflects.
+        // the player immediately above/below us is then the cutoff (should always be someone of another team, since overtaking your own team mate doesn't change score)
+        // calc delta between local player and that player
+        // after player finished also calc score delta to show in secondary timer (mb MM score, too)
+    }
+
+
+    void Render_KO(bool isPlaying, bool isFinish, bool isEndRound) {
+        if (isEndRound) return;
+        if (!KoBuffer::IsGameModeCotdKO) return;
 
         // calc player's position relative to ko position
         // target: either player right before or after ko pos
         // if (koFeedHook is null || theHook is null) return;
-        auto theHook = MLFeed::GetRaceData_V2();
+        auto theHook = MLFeed::GetRaceData_V3();
         auto koFeedHook = MLFeed::GetKoData();
 
         if (koFeedHook.RoundNb <= 0) return;
@@ -1079,12 +1307,25 @@ namespace KoBufferUI {
         return (isBehind ^^ Setting_SwapPlusMinus) ? "-" : "+";
     }
 
-    void DrawReferenceFinalTime(int finalTime, vec4 bufColor, bool isSecondary = false) {
+    void DrawReferenceFinalTime(int finalTime, const vec4 &in bufColor, bool isSecondary = false) {
         auto font = fontChoiceToFont[uint(Setting_Font)];
         DrawBufferTime_Inner(Time::Format(Math::Max(finalTime, 0)), bufColor, font, isSecondary);
     }
 
-    void DrawBufferTime(int msDelta, bool isBehind, vec4 bufColor, bool isSecondary = false) {
+    void ShowMvpDeltaPreview() {
+        int d = Time::Now / 250 % 11 - 5;
+        bool isMVP = d > 0;
+        // if (d == 0) isMVP = Math::Rand(0, 2) == 1;
+        DrawMvpPointsDelta(Math::Abs(d), isMVP);
+    }
+
+    void DrawMvpPointsDelta(int delta, bool isBehind) {
+        if (!S_MM_ShowMvpPointsDelta && !S_ShowMvpDelta_Preview) return;
+        auto font = fontChoiceToFont[uint(Setting_Font)];
+        DrawBufferTime_Inner((isBehind ? "-" : "+") + tostring(delta), GetBufferTimeColor(2, isBehind), font, true);
+    }
+
+    void DrawBufferTime(int msDelta, bool isBehind, const vec4 &in bufColor, bool isSecondary = false) {
         auto font = fontChoiceToFont[uint(Setting_Font)];
         msDelta = Math::Abs(msDelta);
         nvg::Reset();
@@ -1092,7 +1333,7 @@ namespace KoBufferUI {
         DrawBufferTime_Inner(toDraw, bufColor, font, isSecondary);
     }
 
-    void DrawBufferTime_Inner(const string &in toDraw, vec4 bufColor, int font, bool isSecondary = false) {
+    void DrawBufferTime_Inner(const string &in toDraw, const vec4 &in bufColor, int font, bool isSecondary = false) {
         auto screen = vec2(Draw::GetWidth(), Draw::GetHeight());
         vec2 pos = (screen * Setting_BufferDisplayPosition / vec2(100, 100));// - (size / 2);
         float fontSize = Setting_BufferFontSize;
@@ -1332,6 +1573,16 @@ namespace KoBufferUI {
         UI::PopStyleColor();
     }
 }
+
+
+string[]@ IntsToStrs(const int[] &in ints) {
+    string[] strs;
+    for (uint i = 0; i < ints.Length; i++) {
+        strs.InsertLast(tostring(ints[i]));
+    }
+    return strs;
+}
+
 
 void dev_trace(const string &in msg) {
 #if DEV

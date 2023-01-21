@@ -460,8 +460,8 @@ namespace KoBufferUI {
         if (S_ShowFinalTime_Preview) {
             RenderFinalTime();
         }
-        if (S_ShowMvpDelta_Preview) {
-            ShowMvpDeltaPreview();
+        if (S_ShowMvpPointsDelta_Preview) {
+            ShowMvpPointsDeltaPreview();
         }
         // if (S_ShowTeamPoints_Preview) {
         //     ShowTeamPointsPreview();
@@ -986,6 +986,7 @@ namespace KoBufferUI {
         if (mm_inflectionIx < 0) {
             mm_inflectionIx = teamWinning ? nbPlayers - 1 : 0;
             if (mm_inflectionIx == playerIx) mm_inflectionIx = -1;
+            if (mm_inflectionIx < 0 && localPlayer.CpCount == 0) mm_inflectionIx = players.Length - 1;
         }
 
         if (mm_inflectionIx < 0) {
@@ -1324,7 +1325,7 @@ namespace KoBufferUI {
         DrawBufferTime_Inner(Time::Format(Math::Max(finalTime, 0)), bufColor, font, isSecondary);
     }
 
-    void ShowMvpDeltaPreview() {
+    void ShowMvpPointsDeltaPreview() {
         int d = Time::Now / 250 % 11 - 5;
         bool isMVP = d > 0;
         // if (d == 0) isMVP = Math::Rand(0, 2) == 1;
@@ -1332,7 +1333,7 @@ namespace KoBufferUI {
     }
 
     void DrawMvpPointsDelta(int delta, bool isBehind) {
-        if (!S_MM_ShowMvpPointsDelta && !S_ShowMvpDelta_Preview) return;
+        if (!S_MM_ShowMvpPointsDelta && !S_ShowMvpPointsDelta_Preview) return;
         auto font = fontChoiceToFont[uint(Setting_Font)];
         DrawBufferTime_Inner((isBehind ? "-" : "+") + tostring(delta), GetBufferTimeColor(2, isBehind), font, true);
     }

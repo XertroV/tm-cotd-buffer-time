@@ -185,7 +185,7 @@ vec4 S_TA_FinalRefTimeColor = vec4(1, 1, 1, 1);
 // bool S_ShowTeamPoints_Preview = false;
 
 [Setting category="MM / Ranked" name="Preview MVP points buffer" description="Show a preview for 'End of round: MVP points buffer'."]
-bool S_ShowMvpDelta_Preview = true;
+bool S_ShowMvpPointsDelta_Preview = false;
 
 // [Setting category="MM / Ranked" name="End of round: Overall Team Points" description="End of round: show each team's points"]
 // bool S_MM_ShowTeamPoints = true;

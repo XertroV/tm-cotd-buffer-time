@@ -862,6 +862,13 @@ namespace KoBufferUI {
     void Render_MM(bool isPlaying, bool isFinish, bool isEndRound) {
         if (!KoBuffer::IsGameModeMM) return;
 
+        // buffer measures time you can lose before your change in position causes your team to lose.
+        // get predicted team winner -- tells us behind or in front
+        // move the player up/down to find where the score inflects.
+        // the player immediately above/below us is then the cutoff (should always be someone of another team, since overtaking your own team mate doesn't change score)
+        // calc delta between local player and that player
+        // after player finished also calc score delta to show in secondary timer (mb MM score, too)
+
         auto raceData = MLFeed::GetRaceData_V3();
         auto teamsData = MLFeed::GetTeamsMMData_V1();
 
@@ -942,8 +949,14 @@ namespace KoBufferUI {
             return;
         }
 
+        // sometimes happens when joining a game in-progress
         if (playerIx < 0 || ctrlPlayerIx < 0) {
-            warn('the gui player or local player was not found');
+            // warn('the gui player or local player was not found');
+            return;
+        }
+
+        // can happen when joining a match before everything has loaded. it should always have 3 elements, tho. idk. seems like a rare edge case.
+        if (mm_teamTotals.Length < 3) {
             return;
         }
 
@@ -1018,13 +1031,6 @@ namespace KoBufferUI {
         } else {
             @mm_mvpTime = null;
         }
-
-        // buffer measures time you can lose before your change in position causes your team to lose.
-        // get predicted team winner -- tells us behind or in front
-        // move the player up/down to find where the score inflects.
-        // the player immediately above/below us is then the cutoff (should always be someone of another team, since overtaking your own team mate doesn't change score)
-        // calc delta between local player and that player
-        // after player finished also calc score delta to show in secondary timer (mb MM score, too)
     }
 
 

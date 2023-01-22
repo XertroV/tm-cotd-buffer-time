@@ -71,9 +71,6 @@ namespace Updates {
 
             SubHeading("Bug Fixes");
             UI::TextWrapped("- In TA, if the timer is disabled when the UI is off, the menu would not show reference times. (Which was confusing since they say 'null' even thought a timer would show up.)");
-
-            // todo
-            // !
         }
         UI::EndChild();
     }

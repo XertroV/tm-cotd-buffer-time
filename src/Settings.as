@@ -197,7 +197,10 @@ bool S_MM_ShowMvpPointsDelta = true;
 bool S_MM_ShowMvpDelta = true;
 
 [Setting category="MM / Ranked" name="Avoid showing +- 99.999 when possible" description="99.999 indicates when no improvement or failure on your part could have won/lost the map for your team. When true, the delta shown will be to the first or last player instead (as long as you aren't that player)."]
-bool S_MM_AvoidShowing99999 = false;
+bool S_MM_AvoidShowing99999 = true;
+
+[Setting category="MM / Ranked" name="Always show after finishing? (Regardless of UI status)" description="The timer and MVP points delta (when enabled) will always show after you finish a race, regardless of 'only show when UI on/off' settings."]
+bool S_MM_AlwaysShowAfterFinishing = true;
 
 
 

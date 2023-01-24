@@ -314,6 +314,12 @@ namespace KoBufferUI {
 
         if (UI::MenuItem("Show MVP points delta? (round end)", "", S_MM_ShowMvpPointsDelta))
             S_MM_ShowMvpPointsDelta = !S_MM_ShowMvpPointsDelta;
+
+        if (UI::MenuItem("Avoid showing 99.999 where possible?", "", S_MM_AvoidShowing99999))
+            S_MM_AvoidShowing99999 = !S_MM_AvoidShowing99999;
+
+        if (UI::MenuItem("Always show after finishing?", "", S_MM_AlwaysShowAfterFinishing))
+            S_MM_AlwaysShowAfterFinishing = !S_MM_AlwaysShowAfterFinishing;
     }
 
     void RenderTaMenuMainInner() {
@@ -474,6 +480,7 @@ namespace KoBufferUI {
         }
 
         if (g_DisableTillNextGameStart) return;
+        if (!g_koBufferUIVisible) return;
 
         auto nextUiSeq = KoBuffer::GetUiSequence(GetApp());
         if (nextUiSeq != currSeq) {
@@ -485,9 +492,11 @@ namespace KoBufferUI {
         bool isEndRound = currSeq == CGamePlaygroundUIConfig::EUISequence::EndRound;
         bool skipSequence = !isPlaying && !isFinish && !isEndRound;
         if (skipSequence) return;
-        if (!g_koBufferUIVisible
-            || (S_ShowOnlyWhenInterfaceHidden && UI::IsGameUIVisible())
-            || (S_ShowOnlyWhenInterfaceVisible && !UI::IsGameUIVisible())
+        bool isInMatchMaking = KoBuffer::IsGameModeMM;
+        bool skipInterfaceCheck = S_MM_AlwaysShowAfterFinishing && !isPlaying && isInMatchMaking;
+        if (!skipInterfaceCheck
+            && ((S_ShowOnlyWhenInterfaceHidden && UI::IsGameUIVisible())
+             || (S_ShowOnlyWhenInterfaceVisible && !UI::IsGameUIVisible()))
         ) {
             // if we reset here then the menu gives no feedback about the priorities of what references are used.
             // Reset_TA();
@@ -508,12 +517,12 @@ namespace KoBufferUI {
             RenderFinalTime();
         }
 
-        if (S_ShowBufferTimeInKO && KoBuffer::IsGameModeCotdKO)
+        if (S_ShowBufferTimeInMM && isInMatchMaking)
+            Render_MM(isPlaying, isFinish, isEndRound);
+        else if (S_ShowBufferTimeInKO && KoBuffer::IsGameModeCotdKO)
             Render_KO(isPlaying, isFinish, isEndRound);
         else if (S_ShowBufferTimeInTA && KoBuffer::IsGameModeTA)
             Render_TA(isPlaying, isFinish, isEndRound);
-        else if (S_ShowBufferTimeInMM && KoBuffer::IsGameModeMM)
-            Render_MM(isPlaying, isFinish, isEndRound);
     }
 
     // track the ghosts we see and the map they're seen first on. should not be cleared.
@@ -942,8 +951,8 @@ namespace KoBufferUI {
             DrawMvpPointsDelta(delta, mvpPointsTarget > playerPoints);
         }
 
-
-        teamsData.ComputePoints(mm_finishedTeamOrder, mm_points, mm_teamTotals);
+        int winningTeamNumber;
+        teamsData.ComputePoints(mm_finishedTeamOrder, mm_points, mm_teamTotals, winningTeamNumber);
         if (mm_points.Length != mm_finishedTeamOrder.Length) {
             warn('mm_points array and team array don\'t match');
             return;
@@ -964,9 +973,7 @@ namespace KoBufferUI {
         auto nbPlayers = players.Length;
         auto otherTeam = playersTeam == 1 ? 2 : 1;
         // have to be ahead if we can draw, and there are no draws when unbalanced.
-        auto teamWinning = mm_teamTotals[playersTeam] > mm_teamTotals[otherTeam]
-            || (teamsData.TeamsUnbalanced && mm_teamTotals[playersTeam] == mm_teamTotals[otherTeam]
-                && cast<MLFeed::PlayerCpInfo_V4>(players[0]).TeamNum == playersTeam);
+        auto teamWinning = winningTeamNumber == playersTeam;
         int dir = teamWinning ? 1 : -1;
         bool untilWinning = !teamWinning;
         int lastI = playerIx;
@@ -977,8 +984,8 @@ namespace KoBufferUI {
             if (tmpI != playersTeam) {
                 mm_finishedTeamOrder[i] = mm_finishedTeamOrder[lastI];
                 mm_finishedTeamOrder[lastI] = tmpI;
-                teamsData.ComputePoints(mm_finishedTeamOrder, mm_points, mm_teamTotals);
-                bool newWinning = mm_teamTotals[playersTeam] > mm_teamTotals[otherTeam];
+                teamsData.ComputePoints(mm_finishedTeamOrder, mm_points, mm_teamTotals, winningTeamNumber);
+                bool newWinning = winningTeamNumber == playersTeam;
                 if (newWinning == untilWinning) {
                     // we hit the inflection point at index i
                     mm_inflectionIx = i;
@@ -996,6 +1003,7 @@ namespace KoBufferUI {
         if (ta_playerTime is null) @ta_playerTime = WrapPlayerCpInfo(localPlayer);
         else ta_playerTime.UpdateFrom(localPlayer);
 
+        bool finishedAndCouldNotHaveWonLost = ctrlPlayerFinished && mm_inflectionIx < 0;
         if (mm_inflectionIx < 0 && S_MM_AvoidShowing99999) {
             mm_inflectionIx = teamWinning ? nbPlayers - 1 : 0;
             if (mm_inflectionIx == playerIx) mm_inflectionIx = -1;
@@ -1014,20 +1022,22 @@ namespace KoBufferUI {
             else mm_targetTime.UpdateFrom(targetPlayer);
 
             bool isBehind = ta_playerTime > mm_targetTime;
-
             auto msDelta = CalcMsDelta(ta_playerTime, isBehind, mm_targetTime);
             auto cpDelta = Math::Abs(ta_playerTime.cpCount - mm_targetTime.cpCount);
+            if (finishedAndCouldNotHaveWonLost) cpDelta = 2;
+
             DrawBufferTime(msDelta, isBehind, GetBufferTimeColor(cpDelta, isBehind));
         }
 
+        // draw secondary when not finished and enabled.
         if (!ctrlPlayerFinished && isPlaying && S_MM_ShowMvpDelta && mvpPlayerIx >= 0 && mvpPlayerIx != playerIx) {
             if (mm_mvpTime is null) @mm_mvpTime = WrapPlayerCpInfo(players[mvpPlayerIx]);
             else mm_mvpTime.UpdateFrom(players[mvpPlayerIx]);
 
             bool isBehind = ta_playerTime > mm_mvpTime;
-
             auto msDelta = CalcMsDelta(ta_playerTime, isBehind, mm_mvpTime);
             auto cpDelta = Math::Abs(ta_playerTime.cpCount - mm_mvpTime.cpCount);
+
             DrawBufferTime(msDelta, isBehind, GetBufferTimeColor(cpDelta, isBehind), true);
         } else {
             @mm_mvpTime = null;

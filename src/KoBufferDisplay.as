@@ -996,11 +996,12 @@ namespace KoBufferUI {
         if (ta_playerTime is null) @ta_playerTime = WrapPlayerCpInfo(localPlayer);
         else ta_playerTime.UpdateFrom(localPlayer);
 
-        if (mm_inflectionIx < 0) {
+        if (mm_inflectionIx < 0 && S_MM_AvoidShowing99999) {
             mm_inflectionIx = teamWinning ? nbPlayers - 1 : 0;
             if (mm_inflectionIx == playerIx) mm_inflectionIx = -1;
-            if (mm_inflectionIx < 0 && localPlayer.CpCount == 0) mm_inflectionIx = players.Length - 1;
         }
+        // don't show 99.999 before 1st cp
+        if (mm_inflectionIx < 0 && localPlayer.CpCount == 0) mm_inflectionIx = players.Length - 1;
 
         if (mm_inflectionIx < 0) {
             // we are either too far behind or too far ahead to lose.

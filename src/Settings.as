@@ -196,6 +196,9 @@ bool S_MM_ShowMvpPointsDelta = true;
 [Setting category="MM / Ranked" name="During round: Show Buffer Time to MVP player (secondary)" description="When true, a secondary timer will show the delta to the MVP player when it's not you."]
 bool S_MM_ShowMvpDelta = true;
 
+[Setting category="MM / Ranked" name="Avoid showing +- 99.999 when possible" description="99.999 indicates when no improvement or failure on your part could have won/lost the map for your team. When true, the delta shown will be to the first or last player instead (as long as you aren't that player)."]
+bool S_MM_AvoidShowing99999 = false;
+
 
 
 

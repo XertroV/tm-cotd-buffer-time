@@ -67,8 +67,9 @@ namespace KoBuffer {
     }
 
     bool get_IsGameModeMM() {
+        // teams online not supported by MLFeed, the right netread declarations aren't available.
         return lastGM == "TM_Teams_Matchmaking_Online"
-            || lastGM == "TM_Teams_Online"
+            // || lastGM == "TM_Teams_Online"
             ;
     }
 

@@ -67,10 +67,6 @@ namespace KoBuffer {
     }
 
     bool get_IsGameModeMM() {
-        return lastGM == "TM_Teams_Matchmaking_Online";
-    }
-
-    bool get_IsGameModeRanked() {
         return lastGM == "TM_Teams_Matchmaking_Online"
             || lastGM == "TM_Teams_Online"
             ;

@@ -63,6 +63,7 @@ namespace KoBuffer {
             || lastGM == "TM_TimeAttack_Debug"
             || (S_TA_ShowDuringLocalMode && lastGM == "TM_Campaign_Local")
             || (S_TA_ShowDuringLocalMode && lastGM == "TM_PlayMap_Local")
+            || (S_TA_ShowDuringLocalMode && lastGM.StartsWith("TM_Archivist_"))
             ;
     }
 
@@ -514,12 +515,19 @@ namespace KoBufferUI {
             RenderFinalTime();
         }
 
+        bool isKO = KoBuffer::IsGameModeCotdKO;
+        bool isTA = KoBuffer::IsGameModeTA;
+
         if (S_ShowBufferTimeInMM && isInMatchMaking)
             Render_MM(isPlaying, isFinish, isEndRound);
         else if (S_ShowBufferTimeInKO && KoBuffer::IsGameModeCotdKO)
             Render_KO(isPlaying, isFinish, isEndRound);
         else if (S_ShowBufferTimeInTA && KoBuffer::IsGameModeTA)
             Render_TA(isPlaying, isFinish, isEndRound);
+
+        if (g_IsTimerHovered) {
+            RenderHoverExplainerOverlay(isInMatchMaking, isKO, isTA);
+        }
     }
 
     // track the ghosts we see and the map they're seen first on. should not be cleared.
@@ -1383,6 +1391,9 @@ namespace KoBufferUI {
             nvg::Fill();
             nvg::ClosePath();
         }
+
+        // while we're drawing, check if the mouse is inside these coords
+        g_IsTimerHovered = g_IsTimerHovered || IsWithin(g_LastMousePos, pos-sizeWPad/2, sizeWPad);
 
         // "stroke"
         if (Setting_EnableStroke) {

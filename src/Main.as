@@ -23,10 +23,17 @@ void Main() {
     // print("Camera currnet pos: " + Camera::GetCurrentPosition().ToString());
 }
 
-
 void OnDestroyed() { _Unload(); }
 void OnDisabled() { _Unload(); }
 void _Unload() {
+}
+
+bool g_IsTimerHovered = false;
+
+/** Called every frame. `dt` is the delta time (milliseconds since last frame).
+*/
+void Update(float dt) {
+    g_IsTimerHovered = false;
 }
 
 void Render() {
@@ -63,6 +70,15 @@ void OnSettingsChanged() {
     startnew(OnSettingsChanged_TA_EnsureCorrectPriority);
 }
 
+vec2 g_LastMousePos;
+/** Called whenever the mouse moves. `x` and `y` are the viewport coordinates.
+*/
+void OnMouseMove(int x, int y) {
+    g_LastMousePos.x = x;
+    g_LastMousePos.y = y;
+}
+
+
 /*
     Utility functions
 */
@@ -93,4 +109,14 @@ void AddSimpleTooltip(const string &in msg) {
 
 const string MsToSeconds(int t) {
     return Text::Format("%.3f", float(t) / 1000.0);
+}
+
+bool IsWithin(vec2 pos, vec2 topLeft, vec2 size) {
+    vec2 d1 = topLeft - pos;
+    vec2 d2 = (topLeft + size) - pos;
+    return (d1.x >= 0 && d1.y >= 0 && d2.x <= 0 && d2.y <= 0)
+        || (d1.x <= 0 && d1.y <= 0 && d2.x >= 0 && d2.y >= 0)
+        || (d1.x <= 0 && d1.y >= 0 && d2.x >= 0 && d2.y <= 0)
+        || (d1.x >= 0 && d1.y <= 0 && d2.x <= 0 && d2.y >= 0)
+        ;
 }

@@ -57,10 +57,8 @@ namespace KoBuffer {
     }
 
     bool get_IsGameModeTA() {
-        return lastGM == "TM_TimeAttack_Online"
-            || (S_TA_ShowDuringCotdQuali && lastGM == "TM_TimeAttackDaily_Online")
-            || lastGM == "TM_TimeAttack"
-            || lastGM == "TM_TimeAttack_Debug"
+        return lastGM.StartsWith("TM_TimeAttack")
+            || (S_TA_ShowDuringCotdQuali && lastGM == "TM_COTDQualifications_Online")
             || (S_TA_ShowDuringLocalMode && lastGM == "TM_Campaign_Local")
             || (S_TA_ShowDuringLocalMode && lastGM == "TM_PlayMap_Local")
             || (S_TA_ShowDuringLocalMode && lastGM.StartsWith("TM_Archivist_"))
@@ -75,7 +73,7 @@ namespace KoBuffer {
     }
 
     bool get_IsGameModeCotdQuali() {
-        return lastGM == "TM_TimeAttackDaily_Online";
+        return lastGM == "TM_COTDQualifications_Online" || lastGM == "TM_TimeAttackDaily_Online";
     }
 
     CSmPlayer@ Get_App_CurrPlayground_GameTerminal_GUIPlayer(CGameCtnApp@ app) {

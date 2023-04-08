@@ -7,9 +7,9 @@ namespace KoBufferUI {
             auto pos = UI::GetCursorPos();
             UI::Dummy(vec2(250, 10));
             UI::SetCursorPos(pos);
-            // if (inMM || true) RenderHoverExplainerMM();
-            // if (inKO || true) RenderHoverExplainerKO();
-            if (inTA || true) RenderHoverExplainerTA();
+            if (inMM) RenderHoverExplainerMM();
+            if (inKO) RenderHoverExplainerKO();
+            if (inTA) RenderHoverExplainerTA();
         }
         UI::End();
     }

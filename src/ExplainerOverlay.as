@@ -1,7 +1,9 @@
 namespace KoBufferUI {
-    int _hoverWindowYOffset = 65;
+    vec2 lastHoverSize = vec2(200);
     void RenderHoverExplainerOverlay(bool inMM, bool inKO, bool inTA) {
-        UI::SetNextWindowPos(int(g_LastMousePos.x) + 10, int(g_LastMousePos.y) - _hoverWindowYOffset, UI::Cond::Always);
+        vec2 nextPos = g_LastMousePos + vec2(10.0 * UI::GetScale(), lastHoverSize.y * -1);
+        nextPos.y = Math::Max(0., nextPos.y);
+        UI::SetNextWindowPos(int(nextPos.x), int(nextPos.y), UI::Cond::Always);
         int flags = UI::WindowFlags::NoTitleBar | UI::WindowFlags::NoInputs | UI::WindowFlags::AlwaysAutoResize;
         if (UI::Begin("buffer time hover explainer", flags)) {
             auto pos = UI::GetCursorPos();
@@ -10,6 +12,7 @@ namespace KoBufferUI {
             if (inMM) RenderHoverExplainerMM();
             if (inKO) RenderHoverExplainerKO();
             if (inTA) RenderHoverExplainerTA();
+            lastHoverSize = UI::GetWindowSize();
         }
         UI::End();
     }

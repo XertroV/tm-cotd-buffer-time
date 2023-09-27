@@ -246,22 +246,22 @@ void OnSettingsChanged_TA_EnsureCorrectPriority() {
 
 // may as well let ppl view past updates if they want to again
 [Setting category="Updates"]
-bool S_News_Viewed_2022_11_15 = false;
+bool S_News_Viewed_2022_11_15 = true;
 
 [Setting category="Updates"]
-bool S_News_Viewed_2022_11_18 = false;
+bool S_News_Viewed_2022_11_18 = true;
 
 [Setting category="Updates"]
-bool S_News_Viewed_2022_11_23 = false;
+bool S_News_Viewed_2022_11_23 = true;
 
 [Setting category="Updates"]
-bool S_News_Viewed_2022_11_27 = false;
+bool S_News_Viewed_2022_11_27 = true;
 
 [Setting category="Updates"]
-bool S_News_Viewed_2022_11_29 = false;
+bool S_News_Viewed_2022_11_29 = true;
 
 [Setting category="Updates"]
-bool S_News_Viewed_2023_01_20 = false;
+bool S_News_Viewed_2023_01_20 = true;
 
 
 

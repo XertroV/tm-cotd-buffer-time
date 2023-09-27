@@ -220,10 +220,10 @@ namespace Updates {
         vec2 pos = UI::GetCursorPos();
         UI::Text(" " + name);
         vec2 postPos = UI::GetCursorPos();
-        UI::SetCursorPos(pos + vec2(200, 0));
+        // UI::SetCursorPos(pos + vec2(200, 0));
         UI::PushFont(font);
         UI::Text(toDraw);
         UI::PopFont();
-        UI::SetCursorPos(postPos + vec2(0, 3));
+        // UI::SetCursorPos(postPos + vec2(0, 3));
     }
 }

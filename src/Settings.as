@@ -36,6 +36,8 @@ bool S_HideIncrediblyUsefulMenuBarItem = false;
 [Setting category="Global" name="Update Instantly when Players Respawn?" description="If true, the timer will update immediately to account for respawns (both for the local player and other players). Respawn data is not available for ghosts, but is for other players (e.g., in COTD)."]
 bool S_UpdateInstantRespawns = true;
 
+[Setting category="Global" name="Suppress warning when the game loaded many ghosts?" description="If true, no notification will be shown when the game has loaded 100s of ghosts."]
+bool S_NoWarnTooManyGhosts = false;
 
 [Setting category="Global" name="Hotkey Enabled?" description="Enable a hotkey that toggles displaying Buffer Time."]
 bool Setting_ShortcutKeyEnabled = false;

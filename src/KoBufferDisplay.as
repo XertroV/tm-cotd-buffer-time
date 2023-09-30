@@ -588,7 +588,9 @@ namespace KoBufferUI {
 
     uint lastWarnManyGhosts = 0;
     void WarnTooManyGhosts() {
-        if (lastWarnManyGhosts + 20000 < Time::Now) {
+        if (S_NoWarnTooManyGhosts) {
+            warn("The game has loaded at least " + lastNbGhosts + " ghosts.\n\nThis can cause lag upon crossing the finish line.\n\nQuit and rejoin the server to fix (or ignore it).");
+        } else if (lastWarnManyGhosts + 20000 < Time::Now) {
             lastWarnManyGhosts = Time::Now;
             NotifyWarning("The game has loaded at least " + lastNbGhosts + " ghosts.\n\nThis can cause lag upon crossing the finish line.\n\nQuit and rejoin the server to fix (or ignore it).");
         }
@@ -1084,7 +1086,7 @@ namespace KoBufferUI {
             }
             else if (player.name == localUser) @localPlayer = player;
             auto koPlayer = koFeedHook.GetPlayerState(player.name);
-            if (koPlayer.isDNF) nbDNFs += 1;
+            if (koPlayer.isDNF && !player.IsFinished) nbDNFs += 1;
             else { // we don't want to use a DNFd player so skip them; if one of these conditions would be true now, it would have been true for the prior player, so we don't want to overwrite it either
                 auto rank = S_UpdateInstantRespawns ? player.RaceRespawnRank : player.RaceRank;
                 if (rank == preCutoffRank + nbDNFs) @preCpInfo = player;

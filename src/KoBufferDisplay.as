@@ -677,13 +677,13 @@ namespace KoBufferUI {
         if (isEndRound) return;
         auto crt = KoBuffer::GetCurrentRaceTime(GetApp());
 
-        auto raceData = MLFeed::GetRaceData_V2();
+        auto raceData = MLFeed::GetRaceData_V4();
         auto playerName = KoBuffer::Get_GameTerminal_Player_UserName(GetApp());
         auto physicalPlayersName = KoBuffer::Get_GameTerminal_ControlledPlayer_UserName(GetApp());
         auto isSpectating = playerName != physicalPlayersName;
         if (S_TA_HideWhenSpectating && isSpectating) return;
         // trace(tostring(isSpectating));
-        auto localPlayer = raceData.GetPlayer_V2(playerName);
+        auto localPlayer = raceData.GetPlayer_V4(playerName);
         if (localPlayer is null) return;
 
 
@@ -736,7 +736,7 @@ namespace KoBufferUI {
         }
 
         auto vsPlayerTimes = MLFeed::GetPlayersBestTimes(S_TA_VsPlayerName);
-        if (vsPlayerTimes !is null && vsPlayerTimes.Length > 0) {
+        if (vsPlayerTimes !is null && vsPlayerTimes.Length == raceData.CPsToFinish) {
             if (ta_vsPlayer is null) @ta_vsPlayer = WrapBestTimes(S_TA_VsPlayerName, vsPlayerTimes, crt, ta_playerTime.cpCount);
             else ta_vsPlayer.UpdateFrom(S_TA_VsPlayerName, vsPlayerTimes, crt, ta_playerTime.cpCount);
         } else if (ta_vsPlayer !is null) {
@@ -745,8 +745,8 @@ namespace KoBufferUI {
 
         // don't call GetPlayersBestTimes when we're not updating ghosts to avoid loading the players best times immediately.
         if (shouldUpdateGhosts) {
-            auto @playerBestTimes = MLFeed::GetPlayersBestTimes(playerName);
-            if (playerBestTimes !is null && playerBestTimes.Length > 0) {
+            auto @playerBestTimes = localPlayer.BestRaceTimes;
+            if (playerBestTimes !is null && playerBestTimes.Length == raceData.CPsToFinish) {
                 if (ta_bestTime is null) @ta_bestTime = WrapBestTimes(playerName, playerBestTimes, crt, ta_playerTime.cpCount);
                 else ta_bestTime.UpdateFrom(playerName, playerBestTimes, crt, ta_playerTime.cpCount);
             } else {
@@ -833,7 +833,7 @@ namespace KoBufferUI {
             WrappedTimes@ bt = ta_bestTime;
             if (pb is null) return bt;
             if (bt is null) return pb;
-            if (pb < bt) return pb;
+            if (pb.innerResultTime < bt.innerResultTime) return pb;
             return bt;
         }
         if (type == TaBufferTimeType::VsPlayer) return ta_vsPlayer;

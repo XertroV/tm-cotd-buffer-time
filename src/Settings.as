@@ -65,7 +65,7 @@ KoBufferUI::FontChoice Setting_Font = KoBufferUI::FontChoice::Oswald_Regular;
 [Setting category="Buffer Time Display" name="Use Custom Font"]
 bool Setting_Font_Custom = false;
 
-[Setting category="Buffer Time Display" name="Custom Font Path" description="Relative to OpenplanetNext/Fonts unless you specify an absolute path."]
+[Setting category="Buffer Time Display" name="Custom Font Path" description="Place fonts in OpenplanetNext/Fonts."]
 string Setting_Font_CustomPath = "MyFont.ttf";
 
 

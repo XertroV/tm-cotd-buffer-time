@@ -135,7 +135,11 @@ class WrapBestTimes : WrappedTimes {
 
     void UpdateFrom(const string &in playerName, const array<uint>@ cpInfo, int crt, int minCPs) {
         currRaceTime = crt;
-        if (ghostName == playerName && _inner.Length == cpInfo.Length + 1 && _inner[cpInfo.Length] == int(cpInfo[cpInfo.Length - 1])) {
+        if (cpInfo.Length == 0) {
+#if DEV
+            NotifyWarning("cpInfo.Length == 0");
+#endif
+        } else if (ghostName == playerName && _inner.Length == cpInfo.Length + 1 && _inner[cpInfo.Length] == int(cpInfo[cpInfo.Length - 1])) {
             // don't need to update but might be a PITA to have extra logic to recalc cpCount etc based on CRT
         } else {
             ghostName = playerName;

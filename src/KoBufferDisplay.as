@@ -1338,13 +1338,26 @@ namespace KoBufferUI {
         @ui_fontChoiceToFont[11] = UI::LoadFont("fonts/OswaldMono-Regular.ttf", 16, 0x002b, 0x003b);
     }
 
+    string _lastCustomFont = "";
+    int _lastCustomFontNvg = 0;
+
+    int GetNvgFont() {
+        if (Setting_Font_Custom) {
+            if (_lastCustomFont != Setting_Font_CustomPath) {
+                _lastCustomFont = Setting_Font_CustomPath;
+                _lastCustomFontNvg = nvg::LoadFont(_lastCustomFont, false, false);
+            }
+            return _lastCustomFontNvg;
+        }
+        return fontChoiceToFont[uint(Setting_Font)];
+    }
+
     string GetPlusMinusFor(bool isBehind) {
         return (isBehind ^^ Setting_SwapPlusMinus) ? "-" : "+";
     }
 
     void DrawReferenceFinalTime(int finalTime, const vec4 &in bufColor, bool isSecondary = false) {
-        auto font = fontChoiceToFont[uint(Setting_Font)];
-        DrawBufferTime_Inner(Time::Format(Math::Max(finalTime, 0)), bufColor, font, isSecondary);
+        DrawBufferTime_Inner(Time::Format(Math::Max(finalTime, 0)), bufColor, GetNvgFont(), isSecondary);
     }
 
     void ShowMvpPointsDeltaPreview() {
@@ -1356,12 +1369,12 @@ namespace KoBufferUI {
 
     void DrawMvpPointsDelta(int delta, bool isBehind) {
         if (!S_MM_ShowMvpPointsDelta && !S_ShowMvpPointsDelta_Preview) return;
-        auto font = fontChoiceToFont[uint(Setting_Font)];
+        auto font = GetNvgFont();
         DrawBufferTime_Inner((isBehind ? "-" : "+") + tostring(delta), GetBufferTimeColor(2, isBehind), font, true);
     }
 
     void DrawBufferTime(int msDelta, bool isBehind, const vec4 &in bufColor, bool isSecondary = false) {
-        auto font = fontChoiceToFont[uint(Setting_Font)];
+        auto font = GetNvgFont();
         msDelta = Math::Abs(msDelta);
         nvg::Reset();
         string toDraw = GetPlusMinusFor(isBehind) + MsToSeconds(msDelta);

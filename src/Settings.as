@@ -62,6 +62,14 @@ vec2 Setting_BufferDisplayPosition = vec2(50, 87);
 [Setting category="Buffer Time Display" name="Font Choice"]
 KoBufferUI::FontChoice Setting_Font = KoBufferUI::FontChoice::Oswald_Regular;
 
+[Setting category="Buffer Time Display" name="Use Custom Font"]
+bool Setting_Font_Custom = false;
+
+[Setting category="Buffer Time Display" name="Custom Font Path" description="Place fonts in OpenplanetNext/Fonts."]
+string Setting_Font_CustomPath = "MyFont.ttf";
+
+
+
 [Setting category="Buffer Time Display" name="Display Font Size" min="10" max="150"]
 float Setting_BufferFontSize = 60 * Draw::GetHeight() / 1440;
 

@@ -453,7 +453,7 @@ namespace KoBufferUI {
         int cpOffset = Math::Abs((msOffset + 1000) / 400 - 2);
         bool isBehind = msOffset < 0;
         msOffset = Math::Abs(msOffset);
-        DrawBufferTime(msOffset, isBehind, GetBufferTimeColor(cpOffset, isBehind), isSecondary);
+        DrawBufferTime(msOffset, isBehind, GetBufferTimeColor(cpOffset, isBehind), isSecondary, true);
     }
 
     CGamePlaygroundUIConfig::EUISequence currSeq = CGamePlaygroundUIConfig::EUISequence::None;
@@ -1373,7 +1373,12 @@ namespace KoBufferUI {
         DrawBufferTime_Inner((isBehind ? "-" : "+") + tostring(delta), GetBufferTimeColor(2, isBehind), font, true);
     }
 
-    void DrawBufferTime(int msDelta, bool isBehind, const vec4 &in bufColor, bool isSecondary = false) {
+    void DrawBufferTime(int msDelta, bool isBehind, const vec4 &in bufColor, bool isSecondary = false, bool preview = false) {
+        if (!preview) {
+            auto pg = cast<CSmArenaClient>(GetApp().CurrentPlayground);
+            if (pg is null || pg.GameTerminals.Length == 0 || pg.GameTerminals[0] is null || pg.GameTerminals[0].GUIPlayer is null)
+                return;
+        }
         auto font = GetNvgFont();
         msDelta = Math::Abs(msDelta);
         nvg::Reset();

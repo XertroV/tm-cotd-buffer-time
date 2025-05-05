@@ -108,7 +108,9 @@ void AddSimpleTooltip(const string &in msg) {
 }
 
 const string MsToSeconds(int t) {
-    return Text::Format("%.3f", float(t) / 1000.0);
+    if (t < 60000)
+        return Text::Format("%.3f", float(t) / 1000.0);
+    return Time::Format(t);
 }
 
 bool IsWithin(vec2 pos, vec2 topLeft, vec2 size) {

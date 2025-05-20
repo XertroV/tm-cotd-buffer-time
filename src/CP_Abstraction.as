@@ -135,23 +135,21 @@ class WrapBestTimes : WrappedTimes {
 
     void UpdateFrom(const string &in playerName, const array<uint>@ cpInfo, int crt, int minCPs) {
         currRaceTime = crt;
-        if (cpInfo.Length == 0) {
-#if DEV
-            NotifyWarning("cpInfo.Length == 0");
-#endif
-        } else if (ghostName == playerName && _inner.Length == cpInfo.Length + 1 && _inner[cpInfo.Length] == int(cpInfo[cpInfo.Length - 1])) {
+        auto cpInfoLen = cpInfo.Length;
+        if (ghostName == playerName && cpInfoLen > 0 && _inner.Length == cpInfoLen + 1 && _inner[cpInfoLen] == int(cpInfo[cpInfoLen - 1])) {
             // don't need to update but might be a PITA to have extra logic to recalc cpCount etc based on CRT
         } else {
             ghostName = playerName;
-            _inner.Resize(cpInfo.Length + 1);
+            _inner.Resize(cpInfoLen + 1);
             _inner[0] = 0;
             @rawCheckpoints = cpInfo;
         }
         _cpCount = 0;
         _lastCpTime = 0;
-        if (cpInfo.Length > 0)
-            innerResultTime = cpInfo[cpInfo.Length - 1];
-        for (uint i = 0; i < cpInfo.Length; i++) {
+        if (cpInfoLen > 0) {
+            innerResultTime = cpInfo[cpInfoLen - 1];
+        }
+        for (uint i = 0; i < cpInfoLen; i++) {
             _inner[i+1] = cpInfo[i];
             if (int(cpInfo[i]) <= crt || (S_TA_UpdateTimerImmediately && int(i) < minCPs)) {
                 _cpCount++;

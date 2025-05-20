@@ -20,13 +20,8 @@ namespace KoBufferUI {
     void RenderHoverExplainerMM() {
         UI::Text("Matchmaking:");
         UI::TextWrapped("Main timer: you vs. critical opponent (losing to them means losing the match). Changes based on current race positions.");
-        UI::TextWrapped(
-            "2nd timer: vs. MVP player\n"
-            "2nd timer after fin: points delta to MVP"
-        );
-        UI::TextWrapped(
-            "99.999 means that your position has no bearing on whether your team will win/lose the match."
-        );
+        UI::TextWrapped("2nd timer: vs. MVP player\n2nd timer after fin: points delta to MVP");
+        UI::TextWrapped("99.999 means that your position has no bearing on whether your team will win/lose the match.");
     }
     void RenderHoverExplainerKO() {
         UI::Text("Knockout:");
